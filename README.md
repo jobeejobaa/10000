@@ -79,3 +79,33 @@ src/
 - Animation 3D des dés (actuellement juste une rotation 2D au lancer)
 - Sauvegarde de partie en cours (actuellement tout est perdu au rafraîchissement)
 - Son au lancer / à la victoire
+
+## PWA — installation sur téléphone
+
+L'app est une PWA (via `vite-plugin-pwa`) : installable sur l'écran d'accueil et
+jouable hors-ligne après une première visite.
+
+```bash
+npm run build
+npm run preview
+```
+
+Sur le `npm run preview` (ou une fois déployé en HTTPS, ex. Vercel) :
+
+- **Android/Chrome** : un bandeau "Ajouter à l'écran d'accueil" apparaît, ou via le
+  menu ⋮ → "Installer l'application".
+- **iPhone/Safari** : bouton Partager → "Sur l'écran d'accueil".
+
+Ce que ça donne concrètement :
+
+- icône d'app dédiée (vert feutre / dé crème, dans `public/icon-*.png`)
+- lancement en plein écran, sans barre d'adresse (`display: standalone`)
+- le service worker (généré dans `dist/sw.js` au build) précache tout l'app shell,
+  donc le jeu reste jouable même sans réseau une fois ouvert une première fois
+- mise à jour automatique du service worker à chaque nouveau déploiement
+  (`registerType: 'autoUpdate'`)
+
+Fichiers ajoutés : `public/icon-192.png`, `public/icon-512.png`,
+`public/icon-512-maskable.png`, `public/apple-touch-icon.png`,
+`public/favicon-32.png`, config PWA dans `vite.config.js`, meta tags iOS dans
+`index.html`.
