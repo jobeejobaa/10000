@@ -1,0 +1,49 @@
+.board {
+  display: flex;
+  justify-content: center;
+  padding: 1.5rem 0;
+}
+
+.board__ring {
+  width: min(320px, 86vw);
+  height: min(320px, 86vw);
+  border-radius: 50%;
+  background: linear-gradient(155deg, var(--color-wood-light), var(--color-wood) 45%, var(--color-wood-dark));
+  padding: 14px;
+  box-shadow:
+    0 0 0 2px var(--color-wood-dark),
+    0 12px 28px rgba(0, 0, 0, 0.45);
+}
+
+.board__felt {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 38%, var(--color-felt) 0%, var(--color-felt-dark) 100%);
+  box-shadow: inset 0 0 24px rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+
+.board__dice {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+  align-items: center;
+  max-width: 200px;
+}
+
+.board__dice--rolling .die__face {
+  animation: die-roll 0.5s ease-out;
+}
+
+.board__empty-hint {
+  text-align: center;
+  font-size: 13px;
+  color: var(--color-cream-dim);
+  line-height: 1.6;
+  margin: 0;
+}

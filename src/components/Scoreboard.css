@@ -1,0 +1,45 @@
+.scoreboard {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 10px;
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto 0.5rem;
+}
+
+.scoreboard__card {
+  background: rgba(245, 239, 227, 0.06);
+  border: 1px solid rgba(245, 239, 227, 0.12);
+  border-radius: 12px;
+  padding: 10px 12px;
+  text-align: center;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.scoreboard__card--active {
+  border-color: var(--color-gold);
+  background: rgba(212, 175, 55, 0.1);
+}
+
+.scoreboard__name {
+  font-size: 12px;
+  color: var(--color-cream-dim);
+  margin: 0 0 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.scoreboard__score {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 600;
+  margin: 0;
+  color: var(--color-cream);
+}
+
+.scoreboard__hint {
+  font-size: 10px;
+  color: var(--color-cream-dim);
+  margin: 2px 0 0;
+}

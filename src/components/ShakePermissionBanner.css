@@ -1,0 +1,31 @@
+.shake-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(212, 175, 55, 0.12);
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  border-radius: 12px;
+  padding: 10px 14px;
+  margin: 0 auto 1rem;
+  max-width: 420px;
+}
+
+.shake-banner__text {
+  flex: 1;
+  font-size: 13px;
+  color: var(--color-cream);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.shake-banner__btn {
+  flex-shrink: 0;
+  height: 36px;
+  padding: 0 16px;
+  border-radius: 8px;
+  border: none;
+  background: var(--color-gold);
+  color: var(--color-felt-dark);
+  font-weight: 600;
+  font-size: 13px;
+}
