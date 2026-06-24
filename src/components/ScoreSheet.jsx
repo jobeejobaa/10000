@@ -1,0 +1,190 @@
+import { useState, useRef, useEffect } from 'react';
+import './ScoreSheet.css';
+
+const TARGET_SCORE = 10000;
+const MINIMUM_SCORE_TO_OPEN = 500;
+
+export function ScoreSheet({ playerNames, onQuit }) {
+  // entries[playerIndex] = tableau de { points: number | null (farkle), total: number }
+  const [entries, setEntries] = useState(() => playerNames.map(() => []));
+  const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0);
+  const [input, setInput] = useState('');
+  const [winner, setWinner] = useState(null);
+  const inputRef = useRef(null);
+  const tableBodyRef = useRef(null);
+
+  // Focus auto sur l'input à chaque changement de joueur
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, [currentPlayerIndex]);
+
+  // Scroll vers le bas du tableau quand une entrée est ajoutée
+  useEffect(() => {
+    tableBodyRef.current?.scrollTo({ top: tableBodyRef.current.scrollHeight, behavior: 'smooth' });
+  }, [entries]);
+
+  function getTotal(playerIndex) {
+    const list = entries[playerIndex];
+    return list.length > 0 ? list[list.length - 1].total : 0;
+  }
+
+  function hasOpened(playerIndex) {
+    return entries[playerIndex].some((e) => e.points !== null && e.points >= MINIMUM_SCORE_TO_OPEN);
+  }
+
+  function addEntry(points) {
+    setEntries((prev) => {
+      const next = prev.map((e) => [...e]);
+      const currentTotal = getTotal(currentPlayerIndex);
+      const newTotal = points === null ? currentTotal : currentTotal + points;
+      next[currentPlayerIndex] = [...next[currentPlayerIndex], { points, total: newTotal }];
+
+      // Vérification victoire
+      const opened = next[currentPlayerIndex].some((e) => e.points !== null && e.points >= MINIMUM_SCORE_TO_OPEN);
+      if (opened && newTotal >= TARGET_SCORE && winner === null) {
+        setWinner(currentPlayerIndex);
+      }
+
+      return next;
+    });
+    setInput('');
+    setCurrentPlayerIndex((prev) => (prev + 1) % playerNames.length);
+  }
+
+  function handleValider() {
+    const pts = parseInt(input, 10);
+    if (!pts || pts <= 0) return;
+    addEntry(pts);
+  }
+
+  function handleFarkle() {
+    addEntry(null);
+  }
+
+  function handleKeyDown(e) {
+    if (e.key === 'Enter') handleValider();
+  }
+
+  // Nombre de lignes = max d'entrées parmi tous les joueurs
+  const rowCount = Math.max(...entries.map((e) => e.length), 0);
+
+  return (
+    <div className="score-sheet">
+      <header className="score-sheet__header">
+        <span className="score-sheet__header-title">Le 10 000</span>
+        <button type="button" className="score-sheet__quit" onClick={onQuit}>
+          ✕ Quitter
+        </button>
+      </header>
+
+      {winner !== null && (
+        <div className="score-sheet__winner-banner">
+          🎉 {playerNames[winner]} gagne avec {getTotal(winner)} pts !
+        </div>
+      )}
+
+      {/* Tableau des scores */}
+      <div className="score-sheet__table-wrap" ref={tableBodyRef}>
+        <table className="score-sheet__table">
+          <thead>
+            <tr>
+              {playerNames.map((name, i) => (
+                <th
+                  key={i}
+                  className={`score-sheet__th${i === currentPlayerIndex && winner === null ? ' score-sheet__th--active' : ''}`}
+                >
+                  {name}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {Array.from({ length: rowCount }, (_, row) => (
+              <tr key={row}>
+                {playerNames.map((_, col) => {
+                  const entry = entries[col][row];
+                  return (
+                    <td key={col} className="score-sheet__td">
+                      {entry ? (
+                        <>
+                          <span className={`score-sheet__turn${entry.points === null ? ' score-sheet__turn--farkle' : ''}`}>
+                            {entry.points === null ? '✕' : `+${entry.points}`}
+                          </span>
+                          <span className="score-sheet__total">{entry.total}</span>
+                        </>
+                      ) : null}
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Zone de saisie */}
+      {winner === null && (
+        <div className="score-sheet__input-zone">
+          <p className="score-sheet__input-label">
+            Tour de <strong>{playerNames[currentPlayerIndex]}</strong>
+            {!hasOpened(currentPlayerIndex) && getTotal(currentPlayerIndex) === 0 && (
+              <span className="score-sheet__hint"> · 500 pts minimum pour entrer</span>
+            )}
+          </p>
+          <div className="score-sheet__input-row">
+            <button
+              type="button"
+              className="score-sheet__btn score-sheet__btn--step"
+              onClick={() => setInput((v) => String(Math.max(0, (parseInt(v, 10) || 0) - 50)))}
+            >−</button>
+            <input
+              ref={inputRef}
+              type="number"
+              inputMode="numeric"
+              min="0"
+              className="score-sheet__input"
+              placeholder="Points…"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+            />
+            <button
+              type="button"
+              className="score-sheet__btn score-sheet__btn--step"
+              onClick={() => setInput((v) => String((parseInt(v, 10) || 0) + 50))}
+            >+</button>
+            <button type="button" className="score-sheet__btn score-sheet__btn--farkle" onClick={handleFarkle}>
+              Farkle
+            </button>
+            <button
+              type="button"
+              className="score-sheet__btn score-sheet__btn--valider"
+              onClick={handleValider}
+              disabled={!input || parseInt(input, 10) <= 0}
+            >
+              ✓
+            </button>
+          </div>
+
+          {/* Totaux rapides sous la saisie */}
+          <div className="score-sheet__totals">
+            {playerNames.map((name, i) => (
+              <div key={i} className={`score-sheet__total-pill${i === currentPlayerIndex ? ' score-sheet__total-pill--active' : ''}`}>
+                <span className="score-sheet__total-name">{name}</span>
+                <span className="score-sheet__total-value">{getTotal(i)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {winner !== null && (
+        <div className="score-sheet__input-zone">
+          <button type="button" className="score-sheet__btn score-sheet__btn--newgame" onClick={onQuit}>
+            Nouvelle partie
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}

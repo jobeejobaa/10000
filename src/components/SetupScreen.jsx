@@ -6,6 +6,7 @@ const MAX_PLAYERS = 4;
 export function SetupScreen({ onStart }) {
   const [playerCount, setPlayerCount] = useState(2);
   const [names, setNames] = useState(['', '', '', '']);
+  const [mode, setMode] = useState('game'); // 'game' | 'sheet'
 
   function handleNameChange(index, value) {
     setNames((prev) => {
@@ -17,19 +18,17 @@ export function SetupScreen({ onStart }) {
 
   function handleStart() {
     if (playerCount === 1) {
-      // Mode solo : le joueur humain affronte un bot
       const humanName = names[0].trim() || 'Joueur 1';
       onStart([
         { name: humanName, isBot: false },
         { name: '🤖 Bot', isBot: true },
-      ]);
+      ], 'game');
     } else {
-      // Mode multijoueur : que des humains
       const playerDefs = Array.from({ length: playerCount }, (_, i) => ({
         name: names[i].trim() || `Joueur ${i + 1}`,
         isBot: false,
       }));
-      onStart(playerDefs);
+      onStart(playerDefs, mode);
     }
   }
 
@@ -56,6 +55,32 @@ export function SetupScreen({ onStart }) {
           <p className="setup__hint">Toi contre le bot 🤖</p>
         )}
       </div>
+
+      {playerCount >= 2 && (
+        <div className="setup__section">
+          <p className="setup__label">Mode de jeu</p>
+          <div className="setup__mode-row">
+            <button
+              type="button"
+              className={`setup__mode-btn${mode === 'game' ? ' setup__mode-btn--selected' : ''}`}
+              onClick={() => setMode('game')}
+            >
+              <span className="setup__mode-icon">📱</span>
+              <span className="setup__mode-label">Jeu numérique</span>
+              <span className="setup__mode-desc">Dés virtuels sur l'écran</span>
+            </button>
+            <button
+              type="button"
+              className={`setup__mode-btn${mode === 'sheet' ? ' setup__mode-btn--selected' : ''}`}
+              onClick={() => setMode('sheet')}
+            >
+              <span className="setup__mode-icon">🎲</span>
+              <span className="setup__mode-label">Feuille de score</span>
+              <span className="setup__mode-desc">Vos propres dés, scores sur l'appli</span>
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="setup__section">
         {Array.from({ length: playerCount }, (_, i) => (

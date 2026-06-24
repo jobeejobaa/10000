@@ -56,6 +56,53 @@
 }
 
 
+.setup__mode-row {
+  display: flex;
+  gap: 8px;
+}
+
+.setup__mode-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 12px 8px;
+  border-radius: 12px;
+  border: 1px solid rgba(245, 239, 227, 0.2);
+  background: rgba(245, 239, 227, 0.05);
+  color: var(--color-cream);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+  text-align: center;
+}
+
+.setup__mode-btn--selected {
+  border-color: var(--color-gold);
+  background: rgba(212, 175, 55, 0.12);
+}
+
+.setup__mode-icon {
+  font-size: 22px;
+}
+
+.setup__mode-label {
+  font-size: 13px;
+  font-weight: 600;
+  font-family: var(--font-display);
+  color: var(--color-cream);
+}
+
+.setup__mode-btn--selected .setup__mode-label {
+  color: var(--color-gold);
+}
+
+.setup__mode-desc {
+  font-size: 11px;
+  color: var(--color-cream-dim);
+  line-height: 1.3;
+}
+
 .setup__hint {
   font-size: 13px;
   color: var(--color-gold);
