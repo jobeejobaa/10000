@@ -55,6 +55,35 @@
   color: var(--color-gold);
 }
 
+.setup__player-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.setup__player-row .setup__name-input {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+.setup__bot-toggle {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  border: 1px solid rgba(245, 239, 227, 0.2);
+  background: rgba(245, 239, 227, 0.05);
+  font-size: 20px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.setup__bot-toggle--active {
+  border-color: var(--color-gold);
+  background: rgba(212, 175, 55, 0.15);
+}
+
 .setup__name-input {
   width: 100%;
   height: 44px;

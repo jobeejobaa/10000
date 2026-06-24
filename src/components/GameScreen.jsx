@@ -5,14 +5,20 @@ import { ShakePermissionBanner } from './ShakePermissionBanner.jsx';
 import { useTurn } from '../hooks/useTurn.js';
 import { useShakeDetection } from '../hooks/useShakeDetection.js';
 import { getCurrentPlayer } from '../game/gameState.js';
+import { bestSelection, decideBotAction } from '../game/bot.js';
 import './GameScreen.css';
 
+// Délais d'animation pour le bot (en ms) — assez lents pour être lisibles
+const BOT_ROLL_DELAY = 900;
+const BOT_DECIDE_DELAY = 800;
+
 export function GameScreen({ game, onTurnEnd }) {
-  const { turn, roll, toggleDieSelection, getSelectionScore, setAsideSelection, bank, resetTurn } =
+  const { turn, roll, toggleDieSelection, getSelectionScore, setAsideSelection, selectAndSetAside, bank, resetTurn } =
     useTurn();
   const [isRolling, setIsRolling] = useState(false);
 
   const currentPlayer = getCurrentPlayer(game);
+  const isBot = currentPlayer.isBot;
 
   // Réinitialise le tour quand on passe au joueur suivant.
   useEffect(() => {
@@ -30,8 +36,7 @@ export function GameScreen({ game, onTurnEnd }) {
   const needsPermissionPrompt = isSupported && permissionState === 'unknown';
   const shakeIsActive = isSupported && (permissionState === 'granted' || permissionState === 'not-required');
 
-  // Fin de tour automatique sur farkle : on notifie le parent après un court délai
-  // pour laisser le temps au message de s'afficher.
+  // Fin de tour automatique sur farkle ou bank
   useEffect(() => {
     if (turn.phase === 'farkled') {
       const timeout = setTimeout(() => onTurnEnd(0, true), 1400);
@@ -42,6 +47,33 @@ export function GameScreen({ game, onTurnEnd }) {
     }
   }, [turn.phase, turn.turnScore, onTurnEnd]);
 
+  // ── Automatisation du tour bot ──────────────────────────────────────────────
+  useEffect(() => {
+    if (!isBot) return;
+
+    // Phase 'ready' : le bot décide de lancer ou de s'arrêter
+    if (turn.phase === 'ready') {
+      const decision = decideBotAction(turn.turnScore, turn.diceAvailableForRoll, currentPlayer);
+      const timer = setTimeout(() => {
+        if (decision === 'bank') bank();
+        else handleRoll();
+      }, BOT_ROLL_DELAY);
+      return () => clearTimeout(timer);
+    }
+
+    // Phase 'rolled' : le bot sélectionne la meilleure combinaison et la met de côté
+    if (turn.phase === 'rolled') {
+      const timer = setTimeout(() => {
+        const indices = bestSelection(turn.dice);
+        if (indices.length > 0) selectAndSetAside(indices);
+      }, BOT_DECIDE_DELAY);
+      return () => clearTimeout(timer);
+    }
+  }, [turn.phase, isBot]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Note : on exclut volontairement turn.dice, turn.turnScore etc. des dépendances
+  // pour éviter de déclencher deux fois la même action. Le bot réagit uniquement
+  // aux changements de phase.
+
   const selection = getSelectionScore();
   const canRoll = turn.phase === 'ready';
   const canBank = turn.phase === 'ready' && turn.turnScore > 0;
@@ -49,19 +81,21 @@ export function GameScreen({ game, onTurnEnd }) {
 
   return (
     <div className="game-screen">
-      {needsPermissionPrompt && <ShakePermissionBanner onRequestPermission={requestPermission} />}
+      {needsPermissionPrompt && !isBot && <ShakePermissionBanner onRequestPermission={requestPermission} />}
 
       <Scoreboard players={game.players} currentPlayerIndex={game.currentPlayerIndex} />
 
-      <p className="game-screen__turn-label">Au tour de {currentPlayer.name}</p>
+      <p className="game-screen__turn-label">
+        {isBot ? `🤖 ${currentPlayer.name} réfléchit…` : `Au tour de ${currentPlayer.name}`}
+      </p>
 
       <GameBoard
         dice={turn.dice}
         selectedIndices={turn.selectedIndices}
-        canSelect={turn.phase === 'rolled'}
+        canSelect={!isBot && turn.phase === 'rolled'}
         onToggleDie={toggleDieSelection}
         isRolling={isRolling}
-        shakeIsActive={shakeIsActive}
+        shakeIsActive={!isBot && shakeIsActive}
       />
 
       <div className="game-screen__turn-score">
@@ -75,46 +109,49 @@ export function GameScreen({ game, onTurnEnd }) {
         </p>
       )}
 
-      {turn.phase === 'rolled' && !canSetAside && selection.points === 0 && turn.selectedIndices.length > 0 && (
+      {!isBot && turn.phase === 'rolled' && !canSetAside && selection.points === 0 && turn.selectedIndices.length > 0 && (
         <p className="game-screen__message">
           Cette sélection ne rapporte aucun point. Choisis des dés qui forment une combinaison valable.
         </p>
       )}
 
-      {turn.phase === 'rolled' && selection.points > 0 && !selection.isFullyScoring && (
+      {!isBot && turn.phase === 'rolled' && selection.points > 0 && !selection.isFullyScoring && (
         <p className="game-screen__message">
           Il reste des dés sélectionnés qui ne comptent pas. Retire-les avant de valider.
         </p>
       )}
 
-      <div className="game-screen__controls">
-        {turn.phase === 'rolled' && (
-          <button
-            type="button"
-            className="game-screen__btn game-screen__btn--secondary"
-            onClick={setAsideSelection}
-            disabled={!canSetAside}
-          >
-            Mettre de côté ({selection.points} pts)
-          </button>
-        )}
+      {/* Les boutons sont masqués pendant le tour du bot */}
+      {!isBot && (
+        <div className="game-screen__controls">
+          {turn.phase === 'rolled' && (
+            <button
+              type="button"
+              className="game-screen__btn game-screen__btn--secondary"
+              onClick={setAsideSelection}
+              disabled={!canSetAside}
+            >
+              Mettre de côté ({selection.points} pts)
+            </button>
+          )}
 
-        {canRoll && (
-          <button
-            type="button"
-            className={`game-screen__btn game-screen__btn--primary${!shakeIsActive ? ' game-screen__btn--pulse' : ''}`}
-            onClick={handleRoll}
-          >
-            Lancer les dés
-          </button>
-        )}
+          {canRoll && (
+            <button
+              type="button"
+              className={`game-screen__btn game-screen__btn--primary${!shakeIsActive ? ' game-screen__btn--pulse' : ''}`}
+              onClick={handleRoll}
+            >
+              Lancer les dés
+            </button>
+          )}
 
-        {canBank && (
-          <button type="button" className="game-screen__btn game-screen__btn--gold" onClick={bank}>
-            Garder {turn.turnScore} points
-          </button>
-        )}
-      </div>
+          {canBank && (
+            <button type="button" className="game-screen__btn game-screen__btn--gold" onClick={bank}>
+              Garder {turn.turnScore} points
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }

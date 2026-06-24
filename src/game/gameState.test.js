@@ -5,7 +5,7 @@ describe('createGame', () => {
   it('crée un joueur par nom fourni, avec score à 0', () => {
     const game = createGame(['Johanna', 'Dune']);
     expect(game.players).toHaveLength(2);
-    expect(game.players[0]).toEqual({ name: 'Johanna', score: 0, hasOpenedScore: false });
+    expect(game.players[0]).toEqual({ name: 'Johanna', score: 0, hasOpenedScore: false, isBot: false });
   });
 
   it('le premier joueur est le joueur courant', () => {

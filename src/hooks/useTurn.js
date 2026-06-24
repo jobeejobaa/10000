@@ -86,6 +86,30 @@ export function useTurn() {
   }, []);
 
   /**
+   * Action atomique pour le bot : sélectionne les dés aux indices donnés
+   * et les met de côté en un seul setState (évite les problèmes de batching React).
+   * @param {number[]} indices
+   */
+  const selectAndSetAside = useCallback((indices) => {
+    setTurn((prev) => {
+      const selectedValues = indices.map((i) => prev.dice[i]);
+      const { points, isFullyScoring, breakdown } = scoreSelection(selectedValues);
+      if (!isFullyScoring || points === 0) return prev;
+      const remainingCount = prev.dice.length - indices.length;
+      const nextDiceAvailable = remainingCount === 0 ? INITIAL_DICE_COUNT : remainingCount;
+      return {
+        ...prev,
+        phase: 'ready',
+        dice: [],
+        selectedIndices: [],
+        turnScore: prev.turnScore + points,
+        diceAvailableForRoll: nextDiceAvailable,
+        lastRollBreakdown: breakdown,
+      };
+    });
+  }, []);
+
+  /**
    * Le joueur choisit de s'arrêter et de garder les points accumulés ce tour.
    */
   const bank = useCallback(() => {
@@ -102,6 +126,7 @@ export function useTurn() {
     toggleDieSelection,
     getSelectionScore,
     setAsideSelection,
+    selectAndSetAside,
     bank,
     resetTurn,
   };

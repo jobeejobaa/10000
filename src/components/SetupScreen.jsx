@@ -6,6 +6,7 @@ const MAX_PLAYERS = 4;
 export function SetupScreen({ onStart }) {
   const [playerCount, setPlayerCount] = useState(2);
   const [names, setNames] = useState(['', '', '', '']);
+  const [botFlags, setBotFlags] = useState([false, false, false, false]);
 
   function handleNameChange(index, value) {
     setNames((prev) => {
@@ -15,9 +16,20 @@ export function SetupScreen({ onStart }) {
     });
   }
 
+  function toggleBot(index) {
+    setBotFlags((prev) => {
+      const next = [...prev];
+      next[index] = !next[index];
+      return next;
+    });
+  }
+
   function handleStart() {
-    const finalNames = Array.from({ length: playerCount }, (_, i) => names[i].trim() || `Joueur ${i + 1}`);
-    onStart(finalNames);
+    const playerDefs = Array.from({ length: playerCount }, (_, i) => ({
+      name: names[i].trim() || (botFlags[i] ? `Bot ${i + 1}` : `Joueur ${i + 1}`),
+      isBot: botFlags[i],
+    }));
+    onStart(playerDefs);
   }
 
   return (
@@ -43,15 +55,25 @@ export function SetupScreen({ onStart }) {
 
       <div className="setup__section">
         {Array.from({ length: playerCount }, (_, i) => (
-          <input
-            key={i}
-            type="text"
-            className="setup__name-input"
-            placeholder={`Joueur ${i + 1}`}
-            value={names[i]}
-            onChange={(e) => handleNameChange(i, e.target.value)}
-            maxLength={20}
-          />
+          <div key={i} className="setup__player-row">
+            <input
+              type="text"
+              className="setup__name-input"
+              placeholder={botFlags[i] ? `Bot ${i + 1}` : `Joueur ${i + 1}`}
+              value={names[i]}
+              onChange={(e) => handleNameChange(i, e.target.value)}
+              maxLength={20}
+              disabled={botFlags[i]}
+            />
+            <button
+              type="button"
+              className={`setup__bot-toggle${botFlags[i] ? ' setup__bot-toggle--active' : ''}`}
+              onClick={() => toggleBot(i)}
+              title={botFlags[i] ? 'Passer en joueur humain' : 'Passer en bot'}
+            >
+              {botFlags[i] ? '🤖' : '🧑'}
+            </button>
+          </div>
         ))}
       </div>
 

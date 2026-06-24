@@ -1,16 +1,16 @@
 import { MINIMUM_SCORE_TO_OPEN, TARGET_SCORE } from './scoring.js';
 
 /**
- * Crée l'état initial d'une partie pour une liste de noms de joueurs.
- * @param {string[]} playerNames
+ * Crée l'état initial d'une partie.
+ * @param {Array<string | { name: string, isBot?: boolean }>} playerDefs
  */
-export function createGame(playerNames) {
+export function createGame(playerDefs) {
   return {
-    players: playerNames.map((name) => ({
-      name,
-      score: 0,
-      hasOpenedScore: false, // true une fois qu'il a dépassé le minimum de 500 sur un tour
-    })),
+    players: playerDefs.map((def) => {
+      const name = typeof def === 'string' ? def : def.name;
+      const isBot = typeof def === 'string' ? false : (def.isBot ?? false);
+      return { name, isBot, score: 0, hasOpenedScore: false };
+    }),
     currentPlayerIndex: 0,
     winnerIndex: null,
   };
