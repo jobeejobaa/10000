@@ -12,6 +12,7 @@ export function createGame(playerDefs) {
       return { name, isBot, score: 0, hasOpenedScore: false };
     }),
     currentPlayerIndex: 0,
+    turnCount: 0,
     winnerIndex: null,
   };
 }
@@ -51,6 +52,7 @@ export function applyTurnResult(game, turnScore, farkled) {
   return {
     players,
     currentPlayerIndex: nextPlayerIndex,
+    turnCount: game.turnCount + 1,
     winnerIndex,
   };
 }

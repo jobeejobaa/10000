@@ -27,5 +27,5 @@ export default function App() {
     return <WinnerScreen winner={game.players[game.winnerIndex]} onPlayAgain={handlePlayAgain} />;
   }
 
-  return <GameScreen game={game} onTurnEnd={handleTurnEnd} />;
+  return <GameScreen game={game} onTurnEnd={handleTurnEnd} onQuit={handlePlayAgain} />;
 }

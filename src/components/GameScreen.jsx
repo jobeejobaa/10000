@@ -4,7 +4,7 @@ import { Scoreboard } from './Scoreboard.jsx';
 import { ShakePermissionBanner } from './ShakePermissionBanner.jsx';
 import { useTurn } from '../hooks/useTurn.js';
 import { useShakeDetection } from '../hooks/useShakeDetection.js';
-import { getCurrentPlayer } from '../game/gameState.js';
+import { getCurrentPlayer, MINIMUM_SCORE_TO_OPEN } from '../game/gameState.js';
 import { bestSelection, decideBotAction } from '../game/bot.js';
 import './GameScreen.css';
 
@@ -12,7 +12,7 @@ import './GameScreen.css';
 const BOT_ROLL_DELAY = 900;
 const BOT_DECIDE_DELAY = 800;
 
-export function GameScreen({ game, onTurnEnd }) {
+export function GameScreen({ game, onTurnEnd, onQuit }) {
   const { turn, roll, toggleDieSelection, getSelectionScore, setAsideSelection, selectAndSetAside, bank, resetTurn } =
     useTurn();
   const [isRolling, setIsRolling] = useState(false);
@@ -20,10 +20,10 @@ export function GameScreen({ game, onTurnEnd }) {
   const currentPlayer = getCurrentPlayer(game);
   const isBot = currentPlayer.isBot;
 
-  // Réinitialise le tour quand on passe au joueur suivant.
+  // Réinitialise le tour à chaque nouveau tour (turnCount change même en mode 1 joueur).
   useEffect(() => {
     resetTurn();
-  }, [game.currentPlayerIndex, resetTurn]);
+  }, [game.turnCount, resetTurn]);
 
   const handleRoll = useCallback(() => {
     if (turn.phase !== 'ready') return;
@@ -76,11 +76,21 @@ export function GameScreen({ game, onTurnEnd }) {
 
   const selection = getSelectionScore();
   const canRoll = turn.phase === 'ready';
-  const canBank = turn.phase === 'ready' && turn.turnScore > 0;
+  const canBank = turn.phase === 'ready' && turn.turnScore > 0
+    && (currentPlayer.hasOpenedScore || turn.turnScore >= MINIMUM_SCORE_TO_OPEN);
   const canSetAside = turn.phase === 'rolled' && selection.isFullyScoring && selection.points > 0;
 
   return (
     <div className="game-screen">
+      <header className="game-screen__header">
+        <span className="game-screen__header-title">Le 10 000</span>
+        <button type="button" className="game-screen__quit" onClick={onQuit}>
+          ✕ Quitter
+        </button>
+      </header>
+
+      <div className="game-screen__content">
+
       {needsPermissionPrompt && !isBot && <ShakePermissionBanner onRequestPermission={requestPermission} />}
 
       <Scoreboard players={game.players} currentPlayerIndex={game.currentPlayerIndex} />
@@ -102,6 +112,12 @@ export function GameScreen({ game, onTurnEnd }) {
         <span className="game-screen__turn-score-label">Points du tour</span>
         <span className="game-screen__turn-score-value">{turn.turnScore}</span>
       </div>
+
+      {!isBot && turn.phase === 'ready' && turn.turnScore > 0 && !currentPlayer.hasOpenedScore && turn.turnScore < MINIMUM_SCORE_TO_OPEN && (
+        <p className="game-screen__message">
+          Il te faut {MINIMUM_SCORE_TO_OPEN} pts pour entrer dans la partie — continue à lancer !
+        </p>
+      )}
 
       {turn.phase === 'farkled' && (
         <p className="game-screen__message game-screen__message--danger">
@@ -152,6 +168,8 @@ export function GameScreen({ game, onTurnEnd }) {
           )}
         </div>
       )}
+
+      </div>
     </div>
   );
 }
