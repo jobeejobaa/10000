@@ -4,7 +4,7 @@ import './ScoreSheet.css';
 const TARGET_SCORE = 10000;
 const MINIMUM_SCORE_TO_OPEN = 500;
 
-export function ScoreSheet({ playerNames, onQuit }) {
+export function ScoreSheet({ playerNames, onQuit, onGameEnd }) {
   // entries[playerIndex] = tableau de { points: number | null (farkle), total: number }
   const [entries, setEntries] = useState(() => playerNames.map(() => []));
   const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0);
@@ -43,6 +43,11 @@ export function ScoreSheet({ playerNames, onQuit }) {
       const opened = next[currentPlayerIndex].some((e) => e.points !== null && e.points >= MINIMUM_SCORE_TO_OPEN);
       if (opened && newTotal >= TARGET_SCORE && winner === null) {
         setWinner(currentPlayerIndex);
+        onGameEnd?.(playerNames[currentPlayerIndex], next.map((list, i) => ({
+          name: playerNames[i],
+          score: list.length > 0 ? list[list.length - 1].total : 0,
+          isWinner: i === currentPlayerIndex,
+        })));
       }
 
       return next;

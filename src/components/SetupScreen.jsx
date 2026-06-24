@@ -1,12 +1,15 @@
 import { useState } from 'react';
+import { loadHistory, formatRelativeDate } from '../utils/history.js';
 import './SetupScreen.css';
 
 const MAX_PLAYERS = 4;
 
-export function SetupScreen({ onStart }) {
+export function SetupScreen({ onStart, onShowHistory }) {
   const [playerCount, setPlayerCount] = useState(2);
   const [names, setNames] = useState(['', '', '', '']);
-  const [mode, setMode] = useState('game'); // 'game' | 'sheet'
+  const [mode, setMode] = useState('game');
+
+  const recentGames = loadHistory().slice(0, 2);
 
   function handleNameChange(index, value) {
     setNames((prev) => {
@@ -99,6 +102,27 @@ export function SetupScreen({ onStart }) {
       <button type="button" className="setup__start-btn" onClick={handleStart}>
         Commencer la partie
       </button>
+
+      {/* Dernières parties */}
+      {recentGames.length > 0 && (
+        <div className="setup__recent">
+          <p className="setup__label">Dernières parties</p>
+          {recentGames.map((entry) => (
+            <div key={entry.id} className="setup__recent-card">
+              <div className="setup__recent-header">
+                <span className="setup__recent-winner">🏆 {entry.winner}</span>
+                <span className="setup__recent-date">{formatRelativeDate(entry.date)}</span>
+              </div>
+              <p className="setup__recent-players">
+                {entry.players.map((p) => p.name).join(' · ')}
+              </p>
+            </div>
+          ))}
+          <button type="button" className="setup__history-cta" onClick={onShowHistory}>
+            Voir toutes les parties →
+          </button>
+        </div>
+      )}
     </div>
   );
 }

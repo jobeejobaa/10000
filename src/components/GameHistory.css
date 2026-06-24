@@ -1,0 +1,104 @@
+.history {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.history__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1.25rem;
+  height: 52px;
+  background: var(--color-felt-dark);
+  border-bottom: 1px solid rgba(212, 175, 55, 0.25);
+  flex-shrink: 0;
+}
+
+.history__header-title {
+  font-family: var(--font-display);
+  font-size: 18px;
+  color: var(--color-gold);
+}
+
+.history__close {
+  background: transparent;
+  border: 1px solid rgba(245, 239, 227, 0.2);
+  color: var(--color-cream-dim);
+  font-size: 13px;
+  font-family: var(--font-body);
+  padding: 5px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.history__content {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 420px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.history__empty {
+  text-align: center;
+  color: var(--color-cream-dim);
+  font-size: 14px;
+  margin-top: 3rem;
+}
+
+.history__card {
+  background: rgba(245, 239, 227, 0.05);
+  border: 1px solid rgba(245, 239, 227, 0.12);
+  border-radius: 12px;
+  padding: 14px;
+}
+
+.history__card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 10px;
+}
+
+.history__winner {
+  font-family: var(--font-display);
+  font-size: 16px;
+  color: var(--color-gold);
+}
+
+.history__date {
+  font-size: 12px;
+  color: var(--color-cream-dim);
+}
+
+.history__players {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 10px;
+}
+
+.history__player {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  color: var(--color-cream-dim);
+}
+
+.history__player--winner {
+  color: var(--color-cream);
+  font-weight: 500;
+}
+
+.history__player-score {
+  font-family: var(--font-display);
+  font-size: 14px;
+}
+
+.history__mode {
+  font-size: 11px;
+  color: var(--color-cream-dim);
+}
