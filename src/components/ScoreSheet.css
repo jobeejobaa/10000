@@ -3,6 +3,7 @@
   flex-direction: column;
   height: 100vh;
   height: 100dvh;
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 /* ── Header ── */
@@ -121,7 +122,7 @@
   flex-shrink: 0;
   background: var(--color-felt-dark);
   border-top: 1px solid rgba(212, 175, 55, 0.2);
-  padding: 12px 1rem 1.25rem;
+  padding: 12px 1rem max(1.25rem, env(safe-area-inset-bottom));
 }
 
 .score-sheet__input-label {
