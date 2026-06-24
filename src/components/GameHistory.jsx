@@ -32,7 +32,7 @@ export function GameHistory({ onClose }) {
                 ))}
               </div>
               <span className="history__mode">
-                {entry.mode === 'sheet' ? '🎲 Dés physiques' : '📱 Jeu numérique'}
+                {entry.mode === 'sheet' ? 'Feuille de score' : 'Plateau et score'}
               </span>
             </div>
           ))

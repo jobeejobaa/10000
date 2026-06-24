@@ -69,8 +69,8 @@ export function SetupScreen({ onStart, onShowHistory }) {
               onClick={() => setMode('game')}
             >
               <span className="setup__mode-icon">📱</span>
-              <span className="setup__mode-label">Jeu numérique</span>
-              <span className="setup__mode-desc">Dés virtuels sur l'écran</span>
+              <span className="setup__mode-label">On joue ici !</span>
+              <span className="setup__mode-desc">Secoue le téléphone, on gère tout</span>
             </button>
             <button
               type="button"
@@ -78,8 +78,8 @@ export function SetupScreen({ onStart, onShowHistory }) {
               onClick={() => setMode('sheet')}
             >
               <span className="setup__mode-icon">🎲</span>
-              <span className="setup__mode-label">Feuille de score</span>
-              <span className="setup__mode-desc">Vos propres dés, scores sur l'appli</span>
+              <span className="setup__mode-label">J'ai mes dés !</span>
+              <span className="setup__mode-desc">Tes dés + notre appli = parfait</span>
             </button>
           </div>
         </div>
@@ -100,7 +100,7 @@ export function SetupScreen({ onStart, onShowHistory }) {
       </div>
 
       <button type="button" className="setup__start-btn" onClick={handleStart}>
-        Commencer la partie
+        Lancer la partie
       </button>
 
       {/* Dernières parties */}
@@ -119,7 +119,7 @@ export function SetupScreen({ onStart, onShowHistory }) {
             </div>
           ))}
           <button type="button" className="setup__history-cta" onClick={onShowHistory}>
-            Voir toutes les parties →
+            Historique des parties 🏆 →
           </button>
         </div>
       )}
