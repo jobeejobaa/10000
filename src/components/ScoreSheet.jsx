@@ -3,22 +3,21 @@ import './ScoreSheet.css';
 
 const TARGET_SCORE = 10000;
 const MINIMUM_SCORE_TO_OPEN = 500;
+const TRIPLE_FARKLE_PENALTY = -1000;
 
 export function ScoreSheet({ playerNames, onQuit, onGameEnd }) {
-  // entries[playerIndex] = tableau de { points: number | null (farkle), total: number }
   const [entries, setEntries] = useState(() => playerNames.map(() => []));
+  const [consecutiveFarkles, setConsecutiveFarkles] = useState(() => playerNames.map(() => 0));
   const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0);
   const [input, setInput] = useState('');
   const [winner, setWinner] = useState(null);
   const inputRef = useRef(null);
   const tableBodyRef = useRef(null);
 
-  // Focus auto sur l'input à chaque changement de joueur
   useEffect(() => {
     inputRef.current?.focus();
   }, [currentPlayerIndex]);
 
-  // Scroll vers le bas du tableau quand une entrée est ajoutée
   useEffect(() => {
     tableBodyRef.current?.scrollTo({ top: tableBodyRef.current.scrollHeight, behavior: 'smooth' });
   }, [entries]);
@@ -33,11 +32,34 @@ export function ScoreSheet({ playerNames, onQuit, onGameEnd }) {
   }
 
   function addEntry(points) {
+    const isFarkle = points === null;
+
+    // Calcul des farkles consécutifs pour le joueur courant
+    const prevFarkles = consecutiveFarkles[currentPlayerIndex];
+    const newFarkleCount = isFarkle ? prevFarkles + 1 : 0;
+    const isTripleFarkle = newFarkleCount >= 3;
+
+    setConsecutiveFarkles((prev) => {
+      const next = [...prev];
+      next[currentPlayerIndex] = isTripleFarkle ? 0 : newFarkleCount;
+      return next;
+    });
+
     setEntries((prev) => {
       const next = prev.map((e) => [...e]);
       const currentTotal = getTotal(currentPlayerIndex);
-      const newTotal = points === null ? currentTotal : currentTotal + points;
-      next[currentPlayerIndex] = [...next[currentPlayerIndex], { points, total: newTotal }];
+      let newTotal = isFarkle ? currentTotal : currentTotal + points;
+      if (isTripleFarkle) newTotal += TRIPLE_FARKLE_PENALTY;
+
+      next[currentPlayerIndex] = [
+        ...next[currentPlayerIndex],
+        {
+          points,
+          total: newTotal,
+          penalty: isTripleFarkle,
+          farkleStreak: isFarkle ? newFarkleCount : 0,
+        },
+      ];
 
       // Vérification victoire
       const opened = next[currentPlayerIndex].some((e) => e.points !== null && e.points >= MINIMUM_SCORE_TO_OPEN);
@@ -52,13 +74,14 @@ export function ScoreSheet({ playerNames, onQuit, onGameEnd }) {
 
       return next;
     });
+
     setInput('');
     setCurrentPlayerIndex((prev) => (prev + 1) % playerNames.length);
   }
 
   function handleValider() {
     const pts = parseInt(input, 10);
-    if (!pts || pts <= 0) return;
+    if (!pts || pts <= 0 || pts % 50 !== 0) return;
     addEntry(pts);
   }
 
@@ -70,8 +93,8 @@ export function ScoreSheet({ playerNames, onQuit, onGameEnd }) {
     if (e.key === 'Enter') handleValider();
   }
 
-  // Nombre de lignes = max d'entrées parmi tous les joueurs
   const rowCount = Math.max(...entries.map((e) => e.length), 0);
+  const currentFarkles = consecutiveFarkles[currentPlayerIndex];
 
   return (
     <div className="score-sheet">
@@ -88,7 +111,6 @@ export function ScoreSheet({ playerNames, onQuit, onGameEnd }) {
         </div>
       )}
 
-      {/* Tableau des scores */}
       <div className="score-sheet__table-wrap" ref={tableBodyRef}>
         <table className="score-sheet__table">
           <thead>
@@ -112,8 +134,8 @@ export function ScoreSheet({ playerNames, onQuit, onGameEnd }) {
                     <td key={col} className="score-sheet__td">
                       {entry ? (
                         <>
-                          <span className={`score-sheet__turn${entry.points === null ? ' score-sheet__turn--farkle' : ''}`}>
-                            {entry.points === null ? '✕' : `+${entry.points}`}
+                          <span className={`score-sheet__turn${entry.points === null ? ' score-sheet__turn--farkle' : ''}${entry.penalty ? ' score-sheet__turn--penalty' : ''}`}>
+                            {entry.penalty ? '✕✕✕ −1000' : entry.points === null ? `✕${entry.farkleStreak > 1 ? entry.farkleStreak : ''}` : `+${entry.points}`}
                           </span>
                           <span className="score-sheet__total">{entry.total}</span>
                         </>
@@ -127,13 +149,15 @@ export function ScoreSheet({ playerNames, onQuit, onGameEnd }) {
         </table>
       </div>
 
-      {/* Zone de saisie */}
       {winner === null && (
         <div className="score-sheet__input-zone">
           <p className="score-sheet__input-label">
             Tour de <strong>{playerNames[currentPlayerIndex]}</strong>
             {!hasOpened(currentPlayerIndex) && getTotal(currentPlayerIndex) === 0 && (
               <span className="score-sheet__hint"> · 500 pts minimum pour entrer</span>
+            )}
+            {currentFarkles > 0 && currentFarkles < 3 && (
+              <span className="score-sheet__farkle-warning"> · {'✕'.repeat(currentFarkles)} {3 - currentFarkles === 1 ? '⚠️ encore 1 farkle = −1000' : `${3 - currentFarkles} farkles avant −1000`}</span>
             )}
           </p>
           <div className="score-sheet__input-row">
@@ -158,20 +182,24 @@ export function ScoreSheet({ playerNames, onQuit, onGameEnd }) {
               className="score-sheet__btn score-sheet__btn--step"
               onClick={() => setInput((v) => String((parseInt(v, 10) || 0) + 50))}
             >+</button>
+          </div>
+          {input && parseInt(input, 10) > 0 && parseInt(input, 10) % 50 !== 0 && (
+            <p className="score-sheet__error">Le score doit être un multiple de 50</p>
+          )}
+          <div className="score-sheet__action-row">
             <button type="button" className="score-sheet__btn score-sheet__btn--farkle" onClick={handleFarkle}>
-              Farkle
+              ✕ Farkle
             </button>
             <button
               type="button"
               className="score-sheet__btn score-sheet__btn--valider"
               onClick={handleValider}
-              disabled={!input || parseInt(input, 10) <= 0}
+              disabled={!input || parseInt(input, 10) <= 0 || parseInt(input, 10) % 50 !== 0}
             >
-              ✓
+              ✓ Valider
             </button>
           </div>
 
-          {/* Totaux rapides sous la saisie */}
           <div className="score-sheet__totals">
             {playerNames.map((name, i) => (
               <div key={i} className={`score-sheet__total-pill${i === currentPlayerIndex ? ' score-sheet__total-pill--active' : ''}`}>
