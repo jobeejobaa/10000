@@ -30,9 +30,11 @@ export function ScoreSheet({ playerNames, onQuit, onGameEnd }) {
 
   function addEntry(points) {
     const isFarkle = points === null;
+    // Les farkles ne comptent qu'une fois entré en jeu
+    const playerHasOpened = hasOpened(currentPlayerIndex);
     const prevFarkles = consecutiveFarkles[currentPlayerIndex];
-    const newFarkleCount = isFarkle ? prevFarkles + 1 : 0;
-    const isTripleFarkle = newFarkleCount >= 3;
+    const newFarkleCount = isFarkle && playerHasOpened ? prevFarkles + 1 : isFarkle ? prevFarkles : 0;
+    const isTripleFarkle = playerHasOpened && newFarkleCount >= 3;
 
     const currentTotal = getTotal(currentPlayerIndex);
     let newTotal = isFarkle ? currentTotal : currentTotal + points;

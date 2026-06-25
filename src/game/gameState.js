@@ -36,11 +36,14 @@ export function applyTurnResult(game, turnScore, farkled) {
   const consecutiveFarkles = [...(game.consecutiveFarkles ?? players.map(() => 0))];
 
   if (farkled) {
-    consecutiveFarkles[idx] += 1;
-    if (consecutiveFarkles[idx] >= 3) {
-      // Triple farkle : pénalité -1000, remise à zéro du compteur
-      player.score += TRIPLE_FARKLE_PENALTY;
-      consecutiveFarkles[idx] = 0;
+    // Les farkles ne comptent qu'une fois entré en jeu (500 pts minimum)
+    if (player.hasOpenedScore) {
+      consecutiveFarkles[idx] += 1;
+      if (consecutiveFarkles[idx] >= 3) {
+        // Triple farkle : pénalité -1000, remise à zéro du compteur
+        player.score += TRIPLE_FARKLE_PENALTY;
+        consecutiveFarkles[idx] = 0;
+      }
     }
   } else {
     consecutiveFarkles[idx] = 0;

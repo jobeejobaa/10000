@@ -137,12 +137,13 @@ export function useRoom(initialCode = null) {
     if (currentUid !== uid) return;
 
     const isFarkle = points === null;
-    const prevFarkles = gs.consecutiveFarkles?.[uid] ?? 0;
-    const newFarkleCount = isFarkle ? prevFarkles + 1 : 0;
-    const isTripleFarkle = newFarkleCount >= 3;
-
     const prevEntries = gs.entries?.[uid] ?? [];
     const prevTotal = prevEntries.length > 0 ? prevEntries[prevEntries.length - 1].total : 0;
+    const playerHasOpened = prevEntries.some((e) => e.points !== null && e.points >= MINIMUM_SCORE_TO_OPEN && !e.isBust);
+    // Les farkles ne comptent qu'une fois entré en jeu
+    const prevFarkles = gs.consecutiveFarkles?.[uid] ?? 0;
+    const newFarkleCount = isFarkle && playerHasOpened ? prevFarkles + 1 : isFarkle ? prevFarkles : 0;
+    const isTripleFarkle = playerHasOpened && newFarkleCount >= 3;
     let newTotal = isFarkle ? prevTotal : prevTotal + points;
     if (isTripleFarkle) newTotal += TRIPLE_FARKLE_PENALTY;
 
