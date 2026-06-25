@@ -5,61 +5,58 @@
  *   rooms/{code}/
  *     host        : uid du créateur
  *     status      : 'waiting' | 'playing' | 'finished'
- *     playerOrder : [uid, uid, ...]         // ordre des joueurs, fixé au lancement
- *     playerNames : { [uid]: string }       // uid → prénom
- *     gameState/
- *       currentTurnIndex   : number
- *       entries            : { [uid]: [{points, total, penalty, farkleStreak}] }
- *       consecutiveFarkles : { [uid]: number }
- *       winner             : uid | null
+ *     mode        : 'game' | 'sheet'
+ *     playerOrder : [uid, uid, ...]
+ *     playerNames : { [uid]: string }
+ *
+ *   Mode 'sheet' — gameState :
+ *     currentTurnIndex, entries, consecutiveFarkles, winner (uid)
+ *
+ *   Mode 'game' — gameState :
+ *     game : { players, currentPlayerIndex, turnCount, winnerIndex }
+ *            (même structure que createGame() local)
  */
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { ref, set, get, onValue, update, serverTimestamp } from 'firebase/database';
 import { db, signInAnon } from '../firebase.js';
+import { createGame, applyTurnResult, isGameOver } from '../game/gameState.js';
 
 const TARGET_SCORE = 10000;
 const MINIMUM_SCORE_TO_OPEN = 500;
 const TRIPLE_FARKLE_PENALTY = -1000;
 
-/** Génère un code de salle à 4 lettres majuscules. */
 function generateCode() {
-  const letters = 'ABCDEFGHJKLMNPQRSTUVWXYZ'; // sans I et O pour éviter confusion
+  const letters = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
   return Array.from({ length: 4 }, () => letters[Math.floor(Math.random() * letters.length)]).join('');
 }
 
 export function useRoom() {
   const [uid, setUid] = useState(null);
   const [roomCode, setRoomCode] = useState(null);
-  const [roomData, setRoomData] = useState(null);   // snapshot complet de la salle
+  const [roomData, setRoomData] = useState(null);
   const [error, setError] = useState(null);
   const unsubRef = useRef(null);
 
-  // Connexion anonyme au montage
   useEffect(() => {
     signInAnon().then((user) => setUid(user.uid)).catch((e) => setError(e.message));
   }, []);
 
-  // Écoute en temps réel dès qu'on a un roomCode
   useEffect(() => {
     if (!roomCode) return;
     const roomRef = ref(db, `rooms/${roomCode}`);
-    unsubRef.current = onValue(roomRef, (snap) => {
-      setRoomData(snap.val());
-    });
-    return () => {
-      if (unsubRef.current) unsubRef.current();
-    };
+    unsubRef.current = onValue(roomRef, (snap) => setRoomData(snap.val()));
+    return () => { if (unsubRef.current) unsubRef.current(); };
   }, [roomCode]);
 
-  /** Crée une salle et y entre comme hôte. */
-  const createRoom = useCallback(async (playerName) => {
+  const createRoom = useCallback(async (playerName, mode = 'sheet') => {
     if (!uid) return;
     setError(null);
     const code = generateCode();
     await set(ref(db, `rooms/${code}`), {
       host: uid,
       status: 'waiting',
+      mode,
       playerOrder: [uid],
       playerNames: { [uid]: playerName },
       createdAt: serverTimestamp(),
@@ -68,21 +65,14 @@ export function useRoom() {
     return code;
   }, [uid]);
 
-  /** Rejoint une salle existante. */
   const joinRoom = useCallback(async (code, playerName) => {
     if (!uid) return;
     setError(null);
     const upper = code.toUpperCase().trim();
     const snap = await get(ref(db, `rooms/${upper}`));
-    if (!snap.exists()) {
-      setError('Salle introuvable. Vérifie le code.');
-      return false;
-    }
+    if (!snap.exists()) { setError('Salle introuvable. Vérifie le code.'); return false; }
     const data = snap.val();
-    if (data.status !== 'waiting') {
-      setError('Cette partie a déjà commencé.');
-      return false;
-    }
+    if (data.status !== 'waiting') { setError('Cette partie a déjà commencé.'); return false; }
     const currentOrder = data.playerOrder || [];
     if (!currentOrder.includes(uid)) {
       await update(ref(db, `rooms/${upper}`), {
@@ -94,37 +84,63 @@ export function useRoom() {
     return true;
   }, [uid]);
 
-  /** Lance la partie (hôte uniquement). */
+  /** Lance la partie — initialise gameState selon le mode de la salle. */
   const startGame = useCallback(async () => {
     if (!roomCode || !roomData) return;
     const order = roomData.playerOrder;
-    // Initialise le gameState
-    const entries = {};
-    const consecutiveFarkles = {};
-    order.forEach((id) => {
-      entries[id] = [];
-      consecutiveFarkles[id] = 0;
-    });
-    await update(ref(db, `rooms/${roomCode}`), {
-      status: 'playing',
-      'gameState/currentTurnIndex': 0,
-      'gameState/entries': entries,
-      'gameState/consecutiveFarkles': consecutiveFarkles,
-      'gameState/winner': null,
-    });
+    const mode = roomData.mode ?? 'sheet';
+
+    if (mode === 'game') {
+      // Crée un objet game standard avec les joueurs de la salle
+      const playerDefs = order.map((id) => ({ name: roomData.playerNames[id], isBot: false }));
+      const game = createGame(playerDefs);
+      await update(ref(db, `rooms/${roomCode}`), {
+        status: 'playing',
+        'gameState/game': game,
+      });
+    } else {
+      // Mode feuille de score
+      const entries = {};
+      const consecutiveFarkles = {};
+      order.forEach((id) => { entries[id] = []; consecutiveFarkles[id] = 0; });
+      await update(ref(db, `rooms/${roomCode}`), {
+        status: 'playing',
+        'gameState/currentTurnIndex': 0,
+        'gameState/entries': entries,
+        'gameState/consecutiveFarkles': consecutiveFarkles,
+        'gameState/winner': null,
+      });
+    }
   }, [roomCode, roomData]);
 
-  /** Soumet un score (ou un farkle si points === null) pour le joueur courant. */
+  /** Mode 'game' — soumet le résultat d'un tour (turnScore, farkled). */
+  const submitGameTurn = useCallback(async (turnScore, farkled) => {
+    if (!roomCode || !roomData || !uid) return;
+    const order = roomData.playerOrder;
+    const currentGame = roomData.gameState?.game;
+    if (!currentGame) return;
+
+    // Sécurité : seul le joueur actif peut écrire
+    const currentUid = order[currentGame.currentPlayerIndex];
+    if (currentUid !== uid) return;
+
+    const newGame = applyTurnResult(currentGame, turnScore, farkled);
+    const updates = { 'gameState/game': newGame };
+    if (isGameOver(newGame)) updates.status = 'finished';
+    await update(ref(db, `rooms/${roomCode}`), updates);
+  }, [roomCode, roomData, uid]);
+
+  /** Mode 'sheet' — soumet un score (points) ou farkle (null). */
   const submitTurn = useCallback(async (points) => {
     if (!roomCode || !roomData || !uid) return;
     const gs = roomData.gameState;
     const order = roomData.playerOrder;
     const currentIndex = gs.currentTurnIndex;
     const currentUid = order[currentIndex];
-    if (currentUid !== uid) return; // sécurité : seul le joueur actif peut soumettre
+    if (currentUid !== uid) return;
 
     const isFarkle = points === null;
-    const prevFarkles = (gs.consecutiveFarkles?.[uid] ?? 0);
+    const prevFarkles = gs.consecutiveFarkles?.[uid] ?? 0;
     const newFarkleCount = isFarkle ? prevFarkles + 1 : 0;
     const isTripleFarkle = newFarkleCount >= 3;
 
@@ -140,11 +156,9 @@ export function useRoom() {
       farkleStreak: isFarkle ? (isTripleFarkle ? 0 : newFarkleCount) : 0,
     };
 
-    // Vérifie victoire
     const allEntries = [...prevEntries, newEntry];
     const hasOpened = allEntries.some((e) => e.points !== null && e.points >= MINIMUM_SCORE_TO_OPEN);
     const isWinner = hasOpened && newTotal >= TARGET_SCORE;
-
     const nextTurnIndex = (currentIndex + 1) % order.length;
 
     const updates = {
@@ -153,30 +167,15 @@ export function useRoom() {
       'gameState/currentTurnIndex': isWinner ? currentIndex : nextTurnIndex,
       'gameState/winner': isWinner ? uid : (gs.winner ?? null),
     };
-
-    if (isWinner) {
-      updates.status = 'finished';
-    }
-
+    if (isWinner) updates.status = 'finished';
     await update(ref(db, `rooms/${roomCode}`), updates);
   }, [roomCode, roomData, uid]);
 
-  /** Quitte et nettoie l'abonnement (ne supprime pas la salle). */
   const leaveRoom = useCallback(() => {
     if (unsubRef.current) unsubRef.current();
     setRoomCode(null);
     setRoomData(null);
   }, []);
 
-  return {
-    uid,
-    roomCode,
-    roomData,
-    error,
-    createRoom,
-    joinRoom,
-    startGame,
-    submitTurn,
-    leaveRoom,
-  };
+  return { uid, roomCode, roomData, error, createRoom, joinRoom, startGame, submitGameTurn, submitTurn, leaveRoom };
 }
