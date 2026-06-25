@@ -1,0 +1,21 @@
+.mp-score-sheet__my-turn-banner {
+  background: rgba(212, 175, 55, 0.15);
+  border-bottom: 1px solid rgba(212, 175, 55, 0.3);
+  color: var(--color-gold);
+  font-family: var(--font-display);
+  font-size: 15px;
+  text-align: center;
+  padding: 10px 1rem;
+  flex-shrink: 0;
+}
+
+.mp-score-sheet__waiting {
+  text-align: center;
+  color: var(--color-cream-dim);
+  font-size: 15px;
+  padding: 12px 0;
+}
+
+.mp-score-sheet__waiting strong {
+  color: var(--color-cream);
+}
