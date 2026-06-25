@@ -49,6 +49,40 @@ npm test
 
 49 tests couvrent la logique de scoring, de gestion de partie et le comportement du bot (`src/game/`), indépendamment de l'UI.
 
+## Multijoueur en ligne (mode "En ligne 🌐")
+
+Chaque joueur rejoint la partie depuis son propre téléphone. Les scores se synchronisent en temps réel via **Firebase Realtime Database**.
+
+### Mise en place Firebase (à faire une fois)
+
+1. Va sur [console.firebase.google.com](https://console.firebase.google.com) et crée un projet
+2. **Build → Realtime Database** → Créer une base de données → choisir une région → mode test
+3. **Build → Authentication** → Méthode de connexion → Connexion anonyme → Activer
+4. **⚙️ Paramètres du projet** → Ajouter une application Web → copie l'objet `firebaseConfig`
+5. Colle ta config dans `src/firebase.js` (remplace les `'REMPLACE_MOI'`)
+6. Dans Realtime Database → Règles, colle ces règles permissives (parfait pour jouer entre amis) :
+
+```json
+{
+  "rules": {
+    "rooms": {
+      "$roomCode": {
+        ".read": true,
+        ".write": true
+      }
+    }
+  }
+}
+```
+
+### Utilisation
+
+1. Un joueur sélectionne **"En ligne 🌐"** et clique **"Créer ou rejoindre une salle"**
+2. Il entre son prénom et crée la salle → reçoit un **code à 4 lettres** (ex: `KZAB`)
+3. Les autres joueurs ouvrent l'app, cliquent **"Rejoindre"**, entrent le code et leur prénom
+4. L'hôte voit tous les joueurs connectés et clique **"Lancer la partie"**
+5. Chaque joueur joue son tour avec ses vrais dés — seul le joueur actif peut saisir un score
+
 ## Structure du projet
 
 ```
@@ -60,14 +94,18 @@ src/
   hooks/
     useTurn.js            pilote le déroulement d'un tour
     useShakeDetection.js  détection de la secousse via l'accéléromètre
+    useRoom.js            gestion de salle Firebase (créer, rejoindre, sync)
   components/
-    SetupScreen       écran d'accueil : config joueurs, mode, historique
-    GameScreen        écran de jeu numérique (dés virtuels)
-    ScoreSheet        feuille de score pour dés physiques
-    GameHistory       historique des parties
+    SetupScreen             écran d'accueil : config joueurs, mode, historique
+    GameScreen              écran de jeu numérique (dés virtuels)
+    ScoreSheet              feuille de score locale (dés physiques)
+    MultiplayerScoreSheet   feuille de score synchronisée Firebase
+    RoomScreen              création / connexion à une salle en ligne
+    GameHistory             historique des parties
     Scoreboard, GameBoard, Die, WinnerScreen...
   utils/
     history.js        sauvegarde/chargement de l'historique (localStorage)
+  firebase.js         initialisation Firebase (config à remplir)
   App.jsx             orchestration des écrans
 ```
 
@@ -80,7 +118,6 @@ vercel --prod
 
 ## Pistes d'amélioration futures
 
-- Multijoueur réseau (WebSockets / Action Cable) — chaque joueur sur son propre téléphone
 - Animation 3D des dés
 - Son au lancer / à la victoire
 - Sauvegarde de partie en cours
