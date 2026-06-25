@@ -4,6 +4,8 @@ import { GameScreen } from './components/GameScreen.jsx';
 import { WinnerScreen } from './components/WinnerScreen.jsx';
 import { ScoreSheet } from './components/ScoreSheet.jsx';
 import { GameHistory } from './components/GameHistory.jsx';
+import { RoomScreen } from './components/RoomScreen.jsx';
+import { MultiplayerScoreSheet } from './components/MultiplayerScoreSheet.jsx';
 import { createGame, applyTurnResult, isGameOver } from './game/gameState.js';
 import { saveToHistory } from './utils/history.js';
 
@@ -11,16 +13,23 @@ export default function App() {
   const [game, setGame] = useState(null);
   const [sheetPlayers, setSheetPlayers] = useState(null);
   const [showHistory, setShowHistory] = useState(false);
+  const [multiplayerSession, setMultiplayerSession] = useState(null); // { roomCode, uid, roomData, leaveRoom }
   const savedRef = useRef(false); // évite de sauvegarder deux fois la même partie
 
   const handleStart = useCallback((playerDefs, mode) => {
     savedRef.current = false;
-    if (mode === 'sheet') {
+    if (mode === 'online') {
+      setMultiplayerSession('room'); // affiche l'écran de salle
+      setGame(null);
+      setSheetPlayers(null);
+    } else if (mode === 'sheet') {
       setSheetPlayers(playerDefs.map((p) => p.name));
       setGame(null);
+      setMultiplayerSession(null);
     } else {
       setGame(createGame(playerDefs));
       setSheetPlayers(null);
+      setMultiplayerSession(null);
     }
   }, []);
 
@@ -31,6 +40,7 @@ export default function App() {
   const handleQuit = useCallback(() => {
     setGame(null);
     setSheetPlayers(null);
+    setMultiplayerSession(null);
     savedRef.current = false;
   }, []);
 
@@ -67,6 +77,27 @@ export default function App() {
 
   if (showHistory) {
     return <GameHistory onClose={() => setShowHistory(false)} />;
+  }
+
+  if (multiplayerSession === 'room') {
+    return (
+      <RoomScreen
+        onGameStart={(session) => setMultiplayerSession(session)}
+        onQuit={handleQuit}
+      />
+    );
+  }
+
+  if (multiplayerSession && multiplayerSession !== 'room') {
+    return (
+      <MultiplayerScoreSheet
+        roomCode={multiplayerSession.roomCode}
+        uid={multiplayerSession.uid}
+        initialRoomData={multiplayerSession.roomData}
+        leaveRoom={multiplayerSession.leaveRoom}
+        onQuit={handleQuit}
+      />
+    );
   }
 
   if (sheetPlayers) {

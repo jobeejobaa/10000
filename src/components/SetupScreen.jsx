@@ -20,6 +20,10 @@ export function SetupScreen({ onStart, onShowHistory }) {
   }
 
   function handleStart() {
+    if (mode === 'online') {
+      onStart([], 'online');
+      return;
+    }
     if (playerCount === 1) {
       const humanName = names[0].trim() || 'Joueur 1';
       onStart([
@@ -81,26 +85,43 @@ export function SetupScreen({ onStart, onShowHistory }) {
               <span className="setup__mode-label">J'ai mes dés !</span>
               <span className="setup__mode-desc">Tes dés + notre appli = parfait</span>
             </button>
+            <button
+              type="button"
+              className={`setup__mode-btn${mode === 'online' ? ' setup__mode-btn--selected' : ''}`}
+              onClick={() => setMode('online')}
+            >
+              <span className="setup__mode-icon">🌐</span>
+              <span className="setup__mode-label">En ligne !</span>
+              <span className="setup__mode-desc">Chacun sur son téléphone</span>
+            </button>
           </div>
         </div>
       )}
 
-      <div className="setup__section">
-        {Array.from({ length: playerCount }, (_, i) => (
-          <input
-            key={i}
-            type="text"
-            className="setup__name-input"
-            placeholder={`Joueur ${i + 1}`}
-            value={names[i]}
-            onChange={(e) => handleNameChange(i, e.target.value)}
-            maxLength={20}
-          />
-        ))}
-      </div>
+      {mode !== 'online' && (
+        <div className="setup__section">
+          {Array.from({ length: playerCount }, (_, i) => (
+            <input
+              key={i}
+              type="text"
+              className="setup__name-input"
+              placeholder={`Joueur ${i + 1}`}
+              value={names[i]}
+              onChange={(e) => handleNameChange(i, e.target.value)}
+              maxLength={20}
+            />
+          ))}
+        </div>
+      )}
+
+      {mode === 'online' && (
+        <p className="setup__hint" style={{ textAlign: 'center' }}>
+          Chaque joueur entre son prénom dans la salle 🌐
+        </p>
+      )}
 
       <button type="button" className="setup__start-btn" onClick={handleStart}>
-        Lancer la partie
+        {mode === 'online' ? 'Créer ou rejoindre une salle' : 'Lancer la partie'}
       </button>
 
       {/* Dernières parties */}
