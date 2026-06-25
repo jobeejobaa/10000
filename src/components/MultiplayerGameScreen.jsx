@@ -15,7 +15,9 @@ export function MultiplayerGameScreen({ roomCode: roomCodeProp, uid, initialRoom
   const { roomData, submitGameTurn, leaveRoom } = useRoom(roomCodeProp);
 
   const data = roomData ?? initialRoomData;
-  const game = data?.gameState?.game ?? null;
+  // Firebase supprime les null → on remet winnerIndex à null explicitement
+  const rawGame = data?.gameState?.game ?? null;
+  const game = rawGame ? { ...rawGame, winnerIndex: rawGame.winnerIndex ?? null } : null;
   const order = data?.playerOrder ?? [];
   const names = data?.playerNames ?? {};
 

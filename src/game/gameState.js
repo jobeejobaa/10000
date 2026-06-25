@@ -62,7 +62,8 @@ export function getCurrentPlayer(game) {
 }
 
 export function isGameOver(game) {
-  return game.winnerIndex !== null;
+  // Firebase supprime les null → winnerIndex peut revenir undefined ; on couvre les deux
+  return game.winnerIndex != null;
 }
 
 export { MINIMUM_SCORE_TO_OPEN, TARGET_SCORE };
