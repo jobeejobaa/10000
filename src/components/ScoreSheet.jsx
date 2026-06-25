@@ -1,9 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
+import { TARGET_SCORE, MINIMUM_SCORE_TO_OPEN, TRIPLE_FARKLE_PENALTY } from '../game/scoring.js';
 import './ScoreSheet.css';
-
-const TARGET_SCORE = 10000;
-const MINIMUM_SCORE_TO_OPEN = 500;
-const TRIPLE_FARKLE_PENALTY = -1000;
 
 export function ScoreSheet({ playerNames, onQuit, onGameEnd }) {
   const [entries, setEntries] = useState(() => playerNames.map(() => []));
@@ -33,47 +30,42 @@ export function ScoreSheet({ playerNames, onQuit, onGameEnd }) {
 
   function addEntry(points) {
     const isFarkle = points === null;
-
-    // Calcul des farkles consécutifs pour le joueur courant
     const prevFarkles = consecutiveFarkles[currentPlayerIndex];
     const newFarkleCount = isFarkle ? prevFarkles + 1 : 0;
     const isTripleFarkle = newFarkleCount >= 3;
 
+    const currentTotal = getTotal(currentPlayerIndex);
+    let newTotal = isFarkle ? currentTotal : currentTotal + points;
+    if (isTripleFarkle) newTotal += TRIPLE_FARKLE_PENALTY;
+
+    const newEntry = {
+      points,
+      total: newTotal,
+      penalty: isTripleFarkle,
+      farkleStreak: isFarkle ? newFarkleCount : 0,
+    };
+
+    const newEntries = entries.map((e) => [...e]);
+    newEntries[currentPlayerIndex] = [...newEntries[currentPlayerIndex], newEntry];
+
+    const opened = newEntries[currentPlayerIndex].some((e) => e.points !== null && e.points >= MINIMUM_SCORE_TO_OPEN);
+    const hasWon = opened && newTotal >= TARGET_SCORE && winner === null;
+
+    setEntries(newEntries);
     setConsecutiveFarkles((prev) => {
       const next = [...prev];
       next[currentPlayerIndex] = isTripleFarkle ? 0 : newFarkleCount;
       return next;
     });
 
-    setEntries((prev) => {
-      const next = prev.map((e) => [...e]);
-      const currentTotal = getTotal(currentPlayerIndex);
-      let newTotal = isFarkle ? currentTotal : currentTotal + points;
-      if (isTripleFarkle) newTotal += TRIPLE_FARKLE_PENALTY;
-
-      next[currentPlayerIndex] = [
-        ...next[currentPlayerIndex],
-        {
-          points,
-          total: newTotal,
-          penalty: isTripleFarkle,
-          farkleStreak: isFarkle ? newFarkleCount : 0,
-        },
-      ];
-
-      // Vérification victoire
-      const opened = next[currentPlayerIndex].some((e) => e.points !== null && e.points >= MINIMUM_SCORE_TO_OPEN);
-      if (opened && newTotal >= TARGET_SCORE && winner === null) {
-        setWinner(currentPlayerIndex);
-        onGameEnd?.(playerNames[currentPlayerIndex], next.map((list, i) => ({
-          name: playerNames[i],
-          score: list.length > 0 ? list[list.length - 1].total : 0,
-          isWinner: i === currentPlayerIndex,
-        })));
-      }
-
-      return next;
-    });
+    if (hasWon) {
+      setWinner(currentPlayerIndex);
+      onGameEnd?.(playerNames[currentPlayerIndex], newEntries.map((list, i) => ({
+        name: playerNames[i],
+        score: list.length > 0 ? list[list.length - 1].total : 0,
+        isWinner: i === currentPlayerIndex,
+      })));
+    }
 
     setInput('');
     setCurrentPlayerIndex((prev) => (prev + 1) % playerNames.length);

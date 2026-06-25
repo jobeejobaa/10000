@@ -7,8 +7,7 @@
  *   2. Il décide ensuite de relancer ou s'arrêter (decideBotAction)
  */
 
-import { scoreSelection } from './scoring.js';
-import { MINIMUM_SCORE_TO_OPEN } from './scoring.js';
+import { scoreSelection, MINIMUM_SCORE_TO_OPEN } from './scoring.js';
 
 /**
  * Trouve la sélection d'indices de dés qui maximise les points,

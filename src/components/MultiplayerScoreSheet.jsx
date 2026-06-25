@@ -5,13 +5,12 @@
  */
 import { useState, useRef, useEffect } from 'react';
 import { useRoom } from '../hooks/useRoom.js';
+import { MINIMUM_SCORE_TO_OPEN } from '../game/scoring.js';
 import './ScoreSheet.css';
 import './MultiplayerScoreSheet.css';
 
-const MINIMUM_SCORE_TO_OPEN = 500;
-
-export function MultiplayerScoreSheet({ roomCode: roomCodeProp, uid, initialRoomData, leaveRoom, onQuit }) {
-  const { roomData, submitTurn } = useRoom(roomCodeProp);
+export function MultiplayerScoreSheet({ roomCode: roomCodeProp, uid, initialRoomData, onQuit }) {
+  const { roomData, submitTurn, leaveRoom } = useRoom(roomCodeProp);
   const [input, setInput] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const inputRef = useRef(null);

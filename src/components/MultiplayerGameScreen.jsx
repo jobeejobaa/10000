@@ -11,7 +11,7 @@ import { WinnerScreen } from './WinnerScreen.jsx';
 import { isGameOver } from '../game/gameState.js';
 import './MultiplayerGameScreen.css';
 
-export function MultiplayerGameScreen({ roomCode: roomCodeProp, uid, initialRoomData, leaveRoom: leaveRoomProp, onQuit }) {
+export function MultiplayerGameScreen({ roomCode: roomCodeProp, uid, initialRoomData, onQuit }) {
   const { roomData, submitGameTurn, leaveRoom } = useRoom(roomCodeProp);
 
   const data = roomData ?? initialRoomData;
@@ -30,9 +30,8 @@ export function MultiplayerGameScreen({ roomCode: roomCodeProp, uid, initialRoom
 
   const handleQuit = useCallback(() => {
     leaveRoom();
-    leaveRoomProp?.();
     onQuit();
-  }, [leaveRoom, leaveRoomProp, onQuit]);
+  }, [leaveRoom, onQuit]);
 
   if (!game) {
     return (

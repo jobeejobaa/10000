@@ -21,10 +21,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { ref, set, get, onValue, update, serverTimestamp } from 'firebase/database';
 import { db, signInAnon } from '../firebase.js';
 import { createGame, applyTurnResult, isGameOver } from '../game/gameState.js';
-
-const TARGET_SCORE = 10000;
-const MINIMUM_SCORE_TO_OPEN = 500;
-const TRIPLE_FARKLE_PENALTY = -1000;
+import { TARGET_SCORE, MINIMUM_SCORE_TO_OPEN, TRIPLE_FARKLE_PENALTY } from '../game/scoring.js';
 
 function generateCode() {
   const letters = 'ABCDEFGHJKLMNPQRSTUVWXYZ';

@@ -9,6 +9,7 @@
 
 export const MINIMUM_SCORE_TO_OPEN = 500;
 export const TARGET_SCORE = 10000;
+export const TRIPLE_FARKLE_PENALTY = -1000;
 
 /**
  * Compte le nombre d'occurrences de chaque face (1 à 6) dans un tableau de dés.

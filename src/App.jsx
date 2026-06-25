@@ -95,7 +95,6 @@ export default function App() {
           roomCode={multiplayerSession.roomCode}
           uid={multiplayerSession.uid}
           initialRoomData={multiplayerSession.roomData}
-          leaveRoom={multiplayerSession.leaveRoom}
           onQuit={handleQuit}
         />
       );
@@ -105,7 +104,6 @@ export default function App() {
         roomCode={multiplayerSession.roomCode}
         uid={multiplayerSession.uid}
         initialRoomData={multiplayerSession.roomData}
-        leaveRoom={multiplayerSession.leaveRoom}
         onQuit={handleQuit}
       />
     );
