@@ -7,7 +7,8 @@ const MAX_PLAYERS = 4;
 export function SetupScreen({ onStart, onShowHistory }) {
   const [playerCount, setPlayerCount] = useState(2);
   const [names, setNames] = useState(['', '', '', '']);
-  const [mode, setMode] = useState('game');
+  const [mode, setMode] = useState('game');   // 'game' | 'sheet'
+  const [online, setOnline] = useState(false);
 
   const recentGames = loadHistory().slice(0, 2);
 
@@ -20,8 +21,9 @@ export function SetupScreen({ onStart, onShowHistory }) {
   }
 
   function handleStart() {
-    if (mode === 'online') {
-      onStart([], 'online');
+    if (online) {
+      // La saisie des prénoms se fait dans la salle
+      onStart([], `online_${mode}`);
       return;
     }
     if (playerCount === 1) {
@@ -85,20 +87,27 @@ export function SetupScreen({ onStart, onShowHistory }) {
               <span className="setup__mode-label">J'ai mes dés !</span>
               <span className="setup__mode-desc">Tes dés + notre appli = parfait</span>
             </button>
-            <button
-              type="button"
-              className={`setup__mode-btn${mode === 'online' ? ' setup__mode-btn--selected' : ''}`}
-              onClick={() => setMode('online')}
-            >
-              <span className="setup__mode-icon">🌐</span>
-              <span className="setup__mode-label">En ligne !</span>
-              <span className="setup__mode-desc">Chacun sur son téléphone</span>
-            </button>
           </div>
+
+          {/* Toggle En ligne */}
+          <button
+            type="button"
+            className={`setup__online-toggle${online ? ' setup__online-toggle--on' : ''}`}
+            onClick={() => setOnline((v) => !v)}
+          >
+            <span className="setup__online-icon">🌐</span>
+            <span className="setup__online-text">
+              <span className="setup__online-label">Jouer en ligne</span>
+              <span className="setup__online-desc">Chacun sur son propre téléphone</span>
+            </span>
+            <span className={`setup__online-pill${online ? ' setup__online-pill--on' : ''}`}>
+              {online ? 'ON' : 'OFF'}
+            </span>
+          </button>
         </div>
       )}
 
-      {mode !== 'online' && (
+      {!online && (
         <div className="setup__section">
           {Array.from({ length: playerCount }, (_, i) => (
             <input
@@ -114,14 +123,14 @@ export function SetupScreen({ onStart, onShowHistory }) {
         </div>
       )}
 
-      {mode === 'online' && (
+      {online && (
         <p className="setup__hint" style={{ textAlign: 'center' }}>
           Chaque joueur entre son prénom dans la salle 🌐
         </p>
       )}
 
       <button type="button" className="setup__start-btn" onClick={handleStart}>
-        {mode === 'online' ? 'Créer ou rejoindre une salle' : 'Lancer la partie'}
+        {online ? 'Créer ou rejoindre une salle' : 'Lancer la partie'}
       </button>
 
       {/* Dernières parties */}
