@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRoom } from '../hooks/useRoom.js';
 import './RoomScreen.css';
 
@@ -7,6 +7,7 @@ export function RoomScreen({ onGameStart, onQuit, gameMode = 'sheet' }) {
   const [name, setName] = useState('');
   const [codeInput, setCodeInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const startedRef = useRef(false);
 
   const { uid, roomCode, roomData, error, createRoom, joinRoom, startGame, leaveRoom } = useRoom();
 
@@ -19,11 +20,13 @@ export function RoomScreen({ onGameStart, onQuit, gameMode = 'sheet' }) {
       }))
     : [];
 
-  // Quand la partie démarre, on remonte les données à App
-  if (roomData?.status === 'playing') {
-    onGameStart({ roomCode, uid, roomData, leaveRoom });
-    return null;
-  }
+  // Quand la partie démarre, on remonte les données à App (dans un effect, pas dans le render)
+  useEffect(() => {
+    if (roomData?.status === 'playing' && uid && roomCode && !startedRef.current) {
+      startedRef.current = true;
+      onGameStart({ roomCode, uid, roomData, leaveRoom });
+    }
+  }, [roomData?.status, uid, roomCode]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleCreate() {
     if (!name.trim()) return;

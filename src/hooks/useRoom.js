@@ -31,9 +31,9 @@ function generateCode() {
   return Array.from({ length: 4 }, () => letters[Math.floor(Math.random() * letters.length)]).join('');
 }
 
-export function useRoom() {
+export function useRoom(initialCode = null) {
   const [uid, setUid] = useState(null);
-  const [roomCode, setRoomCode] = useState(null);
+  const [roomCode, setRoomCode] = useState(initialCode);
   const [roomData, setRoomData] = useState(null);
   const [error, setError] = useState(null);
   const unsubRef = useRef(null);

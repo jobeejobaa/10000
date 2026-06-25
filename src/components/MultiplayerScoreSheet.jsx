@@ -10,8 +10,8 @@ import './MultiplayerScoreSheet.css';
 
 const MINIMUM_SCORE_TO_OPEN = 500;
 
-export function MultiplayerScoreSheet({ roomCode: initialCode, uid, initialRoomData, leaveRoom, onQuit }) {
-  const { roomCode, roomData, submitTurn } = useRoom();
+export function MultiplayerScoreSheet({ roomCode: roomCodeProp, uid, initialRoomData, leaveRoom, onQuit }) {
+  const { roomData, submitTurn } = useRoom(roomCodeProp);
   const [input, setInput] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const inputRef = useRef(null);

@@ -11,8 +11,8 @@ import { WinnerScreen } from './WinnerScreen.jsx';
 import { isGameOver } from '../game/gameState.js';
 import './MultiplayerGameScreen.css';
 
-export function MultiplayerGameScreen({ roomCode: _roomCode, uid, initialRoomData, leaveRoom: leaveRoomProp, onQuit }) {
-  const { roomData, submitGameTurn, leaveRoom } = useRoom();
+export function MultiplayerGameScreen({ roomCode: roomCodeProp, uid, initialRoomData, leaveRoom: leaveRoomProp, onQuit }) {
+  const { roomData, submitGameTurn, leaveRoom } = useRoom(roomCodeProp);
 
   const data = roomData ?? initialRoomData;
   const game = data?.gameState?.game ?? null;
