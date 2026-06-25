@@ -120,9 +120,21 @@ export function GameScreen({ game, onTurnEnd, onQuit }) {
       )}
 
       {turn.phase === 'farkled' && (
-        <p className="game-screen__message game-screen__message--danger">
-          Farkle ! Aucune combinaison possible, les points du tour sont perdus.
-        </p>
+        <>
+          <p className="game-screen__message game-screen__message--danger">
+            Farkle ! Aucune combinaison possible, les points du tour sont perdus.
+          </p>
+          {!isBot && (
+            <button
+              type="button"
+              className="game-screen__btn game-screen__btn--secondary"
+              style={{ marginTop: '0.5rem' }}
+              onClick={() => onTurnEnd(0, true)}
+            >
+              Tour suivant →
+            </button>
+          )}
+        </>
       )}
 
       {!isBot && turn.phase === 'rolled' && !canSetAside && selection.points === 0 && turn.selectedIndices.length > 0 && (
