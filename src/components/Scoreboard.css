@@ -43,3 +43,10 @@
   color: var(--color-cream-dim);
   margin: 2px 0 0;
 }
+
+.scoreboard__farkles {
+  font-size: 11px;
+  color: #e57373;
+  margin: 2px 0 0;
+  letter-spacing: 2px;
+}

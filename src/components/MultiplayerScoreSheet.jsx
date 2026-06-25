@@ -125,9 +125,11 @@ export function MultiplayerScoreSheet({ roomCode: roomCodeProp, uid, initialRoom
                     <td key={id} className="score-sheet__td">
                       {entry ? (
                         <>
-                          <span className={`score-sheet__turn${entry.points === null ? ' score-sheet__turn--farkle' : ''}${entry.penalty ? ' score-sheet__turn--penalty' : ''}`}>
+                          <span className={`score-sheet__turn${entry.points === null && !entry.isBust ? ' score-sheet__turn--farkle' : ''}${entry.penalty ? ' score-sheet__turn--penalty' : ''}${entry.isBust ? ' score-sheet__turn--bust' : ''}`}>
                             {entry.penalty
                               ? '✕✕✕ −1000'
+                              : entry.isBust
+                              ? `⚡+${entry.points}`
                               : entry.points === null
                               ? `✕${entry.farkleStreak > 1 ? entry.farkleStreak : ''}`
                               : `+${entry.points}`}

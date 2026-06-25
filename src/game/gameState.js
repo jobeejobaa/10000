@@ -1,4 +1,4 @@
-import { MINIMUM_SCORE_TO_OPEN, TARGET_SCORE } from './scoring.js';
+import { MINIMUM_SCORE_TO_OPEN, TARGET_SCORE, TRIPLE_FARKLE_PENALTY } from './scoring.js';
 
 /**
  * Crée l'état initial d'une partie.
@@ -14,6 +14,7 @@ export function createGame(playerDefs) {
     currentPlayerIndex: 0,
     turnCount: 0,
     winnerIndex: null,
+    consecutiveFarkles: playerDefs.map(() => 0),
   };
 }
 
@@ -29,22 +30,40 @@ export function createGame(playerDefs) {
 export function applyTurnResult(game, turnScore, farkled) {
   const players = game.players.map((p) => ({ ...p }));
   const player = players[game.currentPlayerIndex];
+  const idx = game.currentPlayerIndex;
 
-  if (!farkled) {
-    if (!player.hasOpenedScore) {
-      if (turnScore >= MINIMUM_SCORE_TO_OPEN) {
-        player.hasOpenedScore = true;
-        player.score += turnScore;
-      }
-      // Si le score du tour est sous le minimum, le joueur ne gagne rien
-      // mais ne perd rien non plus : il retentera sa chance au tour suivant.
-    } else {
-      player.score += turnScore;
+  // Farkles consécutifs (Firebase peut renvoyer undefined si tableau absent)
+  const consecutiveFarkles = [...(game.consecutiveFarkles ?? players.map(() => 0))];
+
+  if (farkled) {
+    consecutiveFarkles[idx] += 1;
+    if (consecutiveFarkles[idx] >= 3) {
+      // Triple farkle : pénalité -1000, remise à zéro du compteur
+      player.score += TRIPLE_FARKLE_PENALTY;
+      consecutiveFarkles[idx] = 0;
     }
+  } else {
+    consecutiveFarkles[idx] = 0;
+    const potentialScore = player.score + turnScore;
+    const isBust = potentialScore > TARGET_SCORE;
+
+    if (!isBust) {
+      if (!player.hasOpenedScore) {
+        if (turnScore >= MINIMUM_SCORE_TO_OPEN) {
+          player.hasOpenedScore = true;
+          player.score = potentialScore;
+        }
+        // Sous le minimum pour ouvrir : rien ne change
+      } else {
+        player.score = potentialScore;
+      }
+    }
+    // Bust (dépasse 10 000) : score inchangé, pas de pénalité
   }
 
+  // Victoire = tomber pile sur 10 000 (pas au-dessus)
   const winnerIndex =
-    player.hasOpenedScore && player.score >= TARGET_SCORE ? game.currentPlayerIndex : null;
+    player.hasOpenedScore && player.score === TARGET_SCORE ? game.currentPlayerIndex : null;
 
   const nextPlayerIndex =
     winnerIndex === null ? (game.currentPlayerIndex + 1) % players.length : game.currentPlayerIndex;
@@ -54,6 +73,7 @@ export function applyTurnResult(game, turnScore, farkled) {
     currentPlayerIndex: nextPlayerIndex,
     turnCount: game.turnCount + 1,
     winnerIndex,
+    consecutiveFarkles,
   };
 }
 
@@ -66,4 +86,4 @@ export function isGameOver(game) {
   return game.winnerIndex != null;
 }
 
-export { MINIMUM_SCORE_TO_OPEN, TARGET_SCORE };
+export { MINIMUM_SCORE_TO_OPEN, TARGET_SCORE, TRIPLE_FARKLE_PENALTY };

@@ -116,6 +116,12 @@
   font-size: 10px;
 }
 
+.score-sheet__turn--bust {
+  color: #ff8f00;
+  font-weight: 600;
+  font-size: 10px;
+}
+
 .score-sheet__farkle-warning {
   color: var(--color-danger);
   font-size: 11px;

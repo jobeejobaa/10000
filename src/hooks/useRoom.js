@@ -146,16 +146,21 @@ export function useRoom(initialCode = null) {
     let newTotal = isFarkle ? prevTotal : prevTotal + points;
     if (isTripleFarkle) newTotal += TRIPLE_FARKLE_PENALTY;
 
+    // Règle bust : dépasser 10 000 annule le tour (score inchangé, pas de farkle)
+    const isBust = !isFarkle && !isTripleFarkle && newTotal > TARGET_SCORE;
+    if (isBust) newTotal = prevTotal;
+
     const newEntry = {
       points: points ?? null,
       total: newTotal,
       penalty: isTripleFarkle,
       farkleStreak: isFarkle ? (isTripleFarkle ? 0 : newFarkleCount) : 0,
+      isBust,
     };
 
     const allEntries = [...prevEntries, newEntry];
-    const hasOpened = allEntries.some((e) => e.points !== null && e.points >= MINIMUM_SCORE_TO_OPEN);
-    const isWinner = hasOpened && newTotal >= TARGET_SCORE;
+    const hasOpened = allEntries.some((e) => e.points !== null && e.points >= MINIMUM_SCORE_TO_OPEN && !e.isBust);
+    const isWinner = hasOpened && newTotal === TARGET_SCORE;
     const nextTurnIndex = (currentIndex + 1) % order.length;
 
     const updates = {

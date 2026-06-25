@@ -76,7 +76,10 @@ export function GameScreen({ game, onTurnEnd, onQuit }) {
 
   const selection = getSelectionScore();
   const canRoll = turn.phase === 'ready';
-  const canBank = turn.phase === 'ready' && turn.turnScore > 0
+  // Hot dice : tous les dés ont scoré → relance obligatoire (on ne peut pas garder les points)
+  const isHotDice = turn.turnScore > 0 && turn.diceAvailableForRoll === 5;
+  const wouldBust = currentPlayer.hasOpenedScore && (currentPlayer.score + turn.turnScore) > 10000;
+  const canBank = turn.phase === 'ready' && turn.turnScore > 0 && !isHotDice
     && (currentPlayer.hasOpenedScore || turn.turnScore >= MINIMUM_SCORE_TO_OPEN);
   const canSetAside = turn.phase === 'rolled' && selection.isFullyScoring && selection.points > 0;
 
@@ -93,7 +96,11 @@ export function GameScreen({ game, onTurnEnd, onQuit }) {
 
       {needsPermissionPrompt && !isBot && <ShakePermissionBanner onRequestPermission={requestPermission} />}
 
-      <Scoreboard players={game.players} currentPlayerIndex={game.currentPlayerIndex} />
+      <Scoreboard
+        players={game.players}
+        currentPlayerIndex={game.currentPlayerIndex}
+        consecutiveFarkles={game.consecutiveFarkles ?? []}
+      />
 
       <p className="game-screen__turn-label">
         {isBot ? `🤖 ${currentPlayer.name} réfléchit…` : `Au tour de ${currentPlayer.name}`}
@@ -116,6 +123,18 @@ export function GameScreen({ game, onTurnEnd, onQuit }) {
       {!isBot && turn.phase === 'ready' && turn.turnScore > 0 && !currentPlayer.hasOpenedScore && turn.turnScore < MINIMUM_SCORE_TO_OPEN && (
         <p className="game-screen__message">
           Il te faut {MINIMUM_SCORE_TO_OPEN} pts pour entrer dans la partie — continue à lancer !
+        </p>
+      )}
+
+      {!isBot && isHotDice && (
+        <p className="game-screen__message game-screen__message--gold">
+          🔥 Hot dice ! Tous tes dés ont scoré — tu dois relancer les 5 dés !
+        </p>
+      )}
+
+      {!isBot && !isHotDice && wouldBust && turn.turnScore > 0 && turn.phase === 'ready' && (
+        <p className="game-screen__message game-screen__message--danger">
+          ⚠️ Si tu gardes ces points, tu dépasseras 10 000 — ton tour sera annulé !
         </p>
       )}
 

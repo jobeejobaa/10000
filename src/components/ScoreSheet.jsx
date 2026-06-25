@@ -38,18 +38,23 @@ export function ScoreSheet({ playerNames, onQuit, onGameEnd }) {
     let newTotal = isFarkle ? currentTotal : currentTotal + points;
     if (isTripleFarkle) newTotal += TRIPLE_FARKLE_PENALTY;
 
+    // Règle bust : dépasser 10 000 annule le tour (score inchangé, pas de farkle)
+    const isBust = !isFarkle && !isTripleFarkle && newTotal > TARGET_SCORE;
+    if (isBust) newTotal = currentTotal;
+
     const newEntry = {
-      points,
+      points: isBust ? points : points,  // garde les pts pour l'affichage
       total: newTotal,
       penalty: isTripleFarkle,
       farkleStreak: isFarkle ? newFarkleCount : 0,
+      isBust,
     };
 
     const newEntries = entries.map((e) => [...e]);
     newEntries[currentPlayerIndex] = [...newEntries[currentPlayerIndex], newEntry];
 
-    const opened = newEntries[currentPlayerIndex].some((e) => e.points !== null && e.points >= MINIMUM_SCORE_TO_OPEN);
-    const hasWon = opened && newTotal >= TARGET_SCORE && winner === null;
+    const opened = newEntries[currentPlayerIndex].some((e) => e.points !== null && e.points >= MINIMUM_SCORE_TO_OPEN && !e.isBust);
+    const hasWon = opened && newTotal === TARGET_SCORE && winner === null;
 
     setEntries(newEntries);
     setConsecutiveFarkles((prev) => {
@@ -126,8 +131,8 @@ export function ScoreSheet({ playerNames, onQuit, onGameEnd }) {
                     <td key={col} className="score-sheet__td">
                       {entry ? (
                         <>
-                          <span className={`score-sheet__turn${entry.points === null ? ' score-sheet__turn--farkle' : ''}${entry.penalty ? ' score-sheet__turn--penalty' : ''}`}>
-                            {entry.penalty ? '✕✕✕ −1000' : entry.points === null ? `✕${entry.farkleStreak > 1 ? entry.farkleStreak : ''}` : `+${entry.points}`}
+                          <span className={`score-sheet__turn${entry.points === null && !entry.isBust ? ' score-sheet__turn--farkle' : ''}${entry.penalty ? ' score-sheet__turn--penalty' : ''}${entry.isBust ? ' score-sheet__turn--bust' : ''}`}>
+                            {entry.penalty ? '✕✕✕ −1000' : entry.isBust ? `⚡+${entry.points}` : entry.points === null ? `✕${entry.farkleStreak > 1 ? entry.farkleStreak : ''}` : `+${entry.points}`}
                           </span>
                           <span className="score-sheet__total">{entry.total}</span>
                         </>

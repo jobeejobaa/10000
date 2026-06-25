@@ -27,14 +27,15 @@ function countFaces(dice) {
 /**
  * Calcule les points d'un brelan (3, 4 ou 5 exemplaires de la même face).
  * Le brelan de base vaut 1000 pour les 1, et face * 100 pour les autres faces.
- * Un 4e dé identique double ce montant, un 5e le triple.
+ * Un 4e dé identique ajoute la moitié du brelan (×1.5), un 5e double le brelan (×2).
+ * Exemple : 3×5 = 500, 4×5 = 750, 5×5 = 1000.
  */
 function scoreSetOfFace(face, count) {
   if (count < 3) return 0;
   const base = face === 1 ? 1000 : face * 100;
   if (count === 3) return base;
-  if (count === 4) return base * 2;
-  return base * 3; // count === 5
+  if (count === 4) return Math.floor(base * 3 / 2); // base + base/2
+  return base * 2; // count === 5
 }
 
 /**
@@ -56,9 +57,9 @@ export function scoreSelection(dice) {
   // Cas spécial : suite complète 1-2-3-4-5 sur les 5 dés
   if (dice.length === 5 && sorted.join(',') === '1,2,3,4,5') {
     return {
-      points: 500,
+      points: 1000,
       isFullyScoring: true,
-      breakdown: ['Suite 1-2-3-4-5 : 500 points'],
+      breakdown: ['Suite 1-2-3-4-5 : 1000 points'],
     };
   }
 

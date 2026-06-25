@@ -93,6 +93,11 @@
   color: var(--color-danger);
 }
 
+.game-screen__message--gold {
+  color: var(--color-gold);
+  font-weight: 600;
+}
+
 .game-screen__controls {
   display: flex;
   flex-direction: column;
