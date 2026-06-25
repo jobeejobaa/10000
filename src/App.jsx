@@ -6,6 +6,7 @@ import { ScoreSheet } from './components/ScoreSheet.jsx';
 import { GameHistory } from './components/GameHistory.jsx';
 import { RoomScreen } from './components/RoomScreen.jsx';
 import { MultiplayerScoreSheet } from './components/MultiplayerScoreSheet.jsx';
+import { MultiplayerGameScreen } from './components/MultiplayerGameScreen.jsx';
 import { createGame, applyTurnResult, isGameOver } from './game/gameState.js';
 import { saveToHistory } from './utils/history.js';
 
@@ -13,13 +14,14 @@ export default function App() {
   const [game, setGame] = useState(null);
   const [sheetPlayers, setSheetPlayers] = useState(null);
   const [showHistory, setShowHistory] = useState(false);
-  const [multiplayerSession, setMultiplayerSession] = useState(null); // { roomCode, uid, roomData, leaveRoom }
-  const savedRef = useRef(false); // évite de sauvegarder deux fois la même partie
+  // 'room_game' | 'room_sheet' | { roomCode, uid, roomData, leaveRoom, mode } | null
+  const [multiplayerSession, setMultiplayerSession] = useState(null);
+  const savedRef = useRef(false);
 
   const handleStart = useCallback((playerDefs, mode) => {
     savedRef.current = false;
-    if (mode === 'online') {
-      setMultiplayerSession('room'); // affiche l'écran de salle
+    if (mode === 'online_game' || mode === 'online_sheet') {
+      setMultiplayerSession(mode); // affiche RoomScreen avec le bon mode
       setGame(null);
       setSheetPlayers(null);
     } else if (mode === 'sheet') {
@@ -62,16 +64,10 @@ export default function App() {
     }
   }, [game]);
 
-  // Sauvegarde depuis la feuille de score
   const handleSheetGameEnd = useCallback((winnerName, players) => {
     if (!savedRef.current) {
       savedRef.current = true;
-      saveToHistory({
-        date: new Date().toISOString(),
-        mode: 'sheet',
-        winner: winnerName,
-        players,
-      });
+      saveToHistory({ date: new Date().toISOString(), mode: 'sheet', winner: winnerName, players });
     }
   }, []);
 
@@ -79,16 +75,31 @@ export default function App() {
     return <GameHistory onClose={() => setShowHistory(false)} />;
   }
 
-  if (multiplayerSession === 'room') {
+  // Écran de salle — on passe le mode (game ou sheet) à RoomScreen
+  if (multiplayerSession === 'online_game' || multiplayerSession === 'online_sheet') {
+    const gameMode = multiplayerSession === 'online_game' ? 'game' : 'sheet';
     return (
       <RoomScreen
-        onGameStart={(session) => setMultiplayerSession(session)}
+        gameMode={gameMode}
+        onGameStart={(session) => setMultiplayerSession({ ...session, mode: gameMode })}
         onQuit={handleQuit}
       />
     );
   }
 
-  if (multiplayerSession && multiplayerSession !== 'room') {
+  // Partie multijoueur en cours
+  if (multiplayerSession && typeof multiplayerSession === 'object') {
+    if (multiplayerSession.mode === 'game') {
+      return (
+        <MultiplayerGameScreen
+          roomCode={multiplayerSession.roomCode}
+          uid={multiplayerSession.uid}
+          initialRoomData={multiplayerSession.roomData}
+          leaveRoom={multiplayerSession.leaveRoom}
+          onQuit={handleQuit}
+        />
+      );
+    }
     return (
       <MultiplayerScoreSheet
         roomCode={multiplayerSession.roomCode}

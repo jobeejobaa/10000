@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useRoom } from '../hooks/useRoom.js';
 import './RoomScreen.css';
 
-export function RoomScreen({ onGameStart, onQuit }) {
+export function RoomScreen({ onGameStart, onQuit, gameMode = 'sheet' }) {
   const [tab, setTab] = useState('create');          // 'create' | 'join'
   const [name, setName] = useState('');
   const [codeInput, setCodeInput] = useState('');
@@ -28,7 +28,7 @@ export function RoomScreen({ onGameStart, onQuit }) {
   async function handleCreate() {
     if (!name.trim()) return;
     setLoading(true);
-    await createRoom(name.trim());
+    await createRoom(name.trim(), gameMode);
     setLoading(false);
   }
 
