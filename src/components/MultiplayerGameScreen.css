@@ -1,0 +1,124 @@
+.mp-game__loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100dvh;
+  color: var(--color-cream-dim);
+  font-size: 16px;
+}
+
+.mp-game__waiting-screen {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  background: var(--color-felt);
+}
+
+.mp-game__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1.25rem;
+  height: 52px;
+  background: var(--color-felt-dark);
+  border-bottom: 1px solid rgba(212, 175, 55, 0.25);
+  flex-shrink: 0;
+}
+
+.mp-game__header-title {
+  font-family: var(--font-display);
+  font-size: 18px;
+  color: var(--color-gold);
+}
+
+.mp-game__quit {
+  background: transparent;
+  border: 1px solid rgba(245, 239, 227, 0.2);
+  color: var(--color-cream-dim);
+  font-size: 13px;
+  font-family: var(--font-body);
+  padding: 5px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.mp-game__content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem 1.25rem;
+  gap: 1.5rem;
+  max-width: 480px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.mp-game__waiting-banner {
+  background: rgba(212, 175, 55, 0.08);
+  border: 1px solid rgba(212, 175, 55, 0.25);
+  border-radius: 16px;
+  padding: 1.5rem;
+  text-align: center;
+}
+
+.mp-game__waiting-icon {
+  font-size: 40px;
+  display: block;
+  margin-bottom: 10px;
+}
+
+.mp-game__waiting-text {
+  color: var(--color-cream-dim);
+  font-size: 17px;
+  margin: 0;
+}
+
+.mp-game__waiting-text strong {
+  color: var(--color-cream);
+}
+
+.mp-game__scores {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mp-game__scores-label {
+  font-size: 13px;
+  color: var(--color-cream-dim);
+  margin: 0 0 4px;
+}
+
+.mp-game__score-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(245, 239, 227, 0.05);
+  border: 1px solid rgba(245, 239, 227, 0.08);
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+
+.mp-game__score-row--active {
+  border-color: rgba(212, 175, 55, 0.35);
+  background: rgba(212, 175, 55, 0.08);
+}
+
+.mp-game__score-row--me {
+  border-style: dashed;
+}
+
+.mp-game__score-name {
+  color: var(--color-cream);
+  font-size: 15px;
+}
+
+.mp-game__score-value {
+  font-family: var(--font-display);
+  font-size: 18px;
+  color: var(--color-cream);
+}
+
+.mp-game__score-row--active .mp-game__score-value {
+  color: var(--color-gold);
+}
