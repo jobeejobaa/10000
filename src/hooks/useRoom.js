@@ -69,14 +69,17 @@ export function useRoom(initialCode = null) {
     const snap = await get(ref(db, `rooms/${upper}`));
     if (!snap.exists()) { setError('Salle introuvable. Vérifie le code.'); return false; }
     const data = snap.val();
-    if (data.status !== 'waiting') { setError('Cette partie a déjà commencé.'); return false; }
     const currentOrder = data.playerOrder || [];
-    if (!currentOrder.includes(uid)) {
-      await update(ref(db, `rooms/${upper}`), {
-        [`playerNames/${uid}`]: playerName,
-        playerOrder: [...currentOrder, uid],
-      });
+    // Déjà dans la salle → reconnexion directe même si la partie est lancée
+    if (currentOrder.includes(uid)) {
+      setRoomCode(upper);
+      return true;
     }
+    if (data.status !== 'waiting') { setError('Cette partie a déjà commencé.'); return false; }
+    await update(ref(db, `rooms/${upper}`), {
+      [`playerNames/${uid}`]: playerName,
+      playerOrder: [...currentOrder, uid],
+    });
     setRoomCode(upper);
     return true;
   }, [uid]);
