@@ -54,12 +54,14 @@ export function scoreSelection(dice) {
   const sorted = [...dice].sort((a, b) => a - b);
   const breakdown = [];
 
-  // Cas spécial : suite complète 1-2-3-4-5 sur les 5 dés
-  if (dice.length === 5 && sorted.join(',') === '1,2,3,4,5') {
+  // Cas spécial : suites complètes sur les 5 dés (1-2-3-4-5 ou 2-3-4-5-6)
+  const sortedStr = sorted.join(',');
+  if (dice.length === 5 && (sortedStr === '1,2,3,4,5' || sortedStr === '2,3,4,5,6')) {
+    const label = sortedStr === '1,2,3,4,5' ? 'Suite 1-2-3-4-5' : 'Suite 2-3-4-5-6';
     return {
       points: 1000,
       isFullyScoring: true,
-      breakdown: ['Suite 1-2-3-4-5 : 1000 points'],
+      breakdown: [`${label} : 1000 points`],
     };
   }
 
