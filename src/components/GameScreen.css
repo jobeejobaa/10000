@@ -149,3 +149,47 @@
   background: var(--color-gold);
   color: var(--color-felt-dark);
 }
+
+/* ── Zone "mis de côté" — dés scorants auto-sélectionnés ── */
+.game-screen__aside-zone {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 380px;
+  background: rgba(212, 175, 55, 0.08);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  border-radius: 14px;
+  padding: 8px 14px;
+  margin: 0.5rem 0 -0.25rem;
+}
+
+.game-screen__aside-label {
+  font-size: 11px;
+  color: var(--color-cream-dim);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.game-screen__aside-dice {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  flex: 1;
+  justify-content: center;
+}
+
+/* Dés plus petits dans la zone aside */
+.game-screen__aside-dice .die {
+  width: 40px;
+  height: 40px;
+}
+
+.game-screen__aside-score {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-gold);
+  white-space: nowrap;
+  flex-shrink: 0;
+}

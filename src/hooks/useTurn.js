@@ -1,10 +1,11 @@
 import { useState, useCallback } from 'react';
 import { rollDice, scoreSelection, hasScoringOption } from '../game/scoring.js';
+import { bestSelection } from '../game/bot.js';
 
 /**
  * Phases possibles d'un tour :
  * - 'ready'    : en attente du premier lancer
- * - 'rolled'   : dés lancés, le joueur doit sélectionner une combinaison
+ * - 'rolled'   : dés lancés, sélection automatique des dés scorants
  * - 'farkled'  : aucune combinaison possible, le tour est terminé (perdu)
  * - 'banked'   : le joueur a choisi de s'arrêter, le tour est terminé (gagné)
  */
@@ -15,8 +16,8 @@ function createInitialTurnState() {
   return {
     phase: 'ready',
     dice: [],
-    selectedIndices: [],
-    turnScore: 0,
+    selectedIndices: [],   // indices des dés scorants (auto-sélectionnés)
+    turnScore: 0,          // points accumulés des lancers précédents CE tour
     diceAvailableForRoll: INITIAL_DICE_COUNT,
     lastRollBreakdown: [],
   };
@@ -25,95 +26,72 @@ function createInitialTurnState() {
 export function useTurn() {
   const [turn, setTurn] = useState(createInitialTurnState);
 
+  /** Lance les dés et auto-sélectionne la meilleure combinaison scorante. */
   const roll = useCallback(() => {
     setTurn((prev) => {
+      if (prev.phase !== 'ready') return prev;
       const newDice = rollDice(prev.diceAvailableForRoll);
-      const farkled = !hasScoringOption(newDice);
-      return {
-        ...prev,
-        phase: farkled ? 'farkled' : 'rolled',
-        dice: newDice,
-        selectedIndices: [],
-        lastRollBreakdown: [],
-      };
+      if (!hasScoringOption(newDice)) {
+        return { ...prev, phase: 'farkled', dice: newDice, selectedIndices: [], lastRollBreakdown: [] };
+      }
+      const autoSelected = bestSelection(newDice);
+      return { ...prev, phase: 'rolled', dice: newDice, selectedIndices: autoSelected, lastRollBreakdown: [] };
     });
   }, []);
 
-  const toggleDieSelection = useCallback((index) => {
+  /**
+   * Met de côté les dés auto-sélectionnés ET relance les restants en un seul setState.
+   * Si tous les dés scorent (hot dice) → relance 5 nouveaux dés.
+   */
+  const rollWithSelection = useCallback(() => {
     setTurn((prev) => {
       if (prev.phase !== 'rolled') return prev;
-      const isSelected = prev.selectedIndices.includes(index);
-      const selectedIndices = isSelected
-        ? prev.selectedIndices.filter((i) => i !== index)
-        : [...prev.selectedIndices, index];
-      return { ...prev, selectedIndices };
-    });
-  }, []);
-
-  /**
-   * Renvoie le résultat du scoring pour la sélection actuelle.
-   * Utilisé par l'UI pour activer/désactiver le bouton "mettre de côté".
-   */
-  const getSelectionScore = useCallback(() => {
-    const selectedValues = turn.selectedIndices.map((i) => turn.dice[i]);
-    return scoreSelection(selectedValues);
-  }, [turn.dice, turn.selectedIndices]);
-
-  /**
-   * Met de côté les dés sélectionnés (doit former une combinaison valable),
-   * ajoute leurs points au score du tour, et prépare la relance des dés restants.
-   * Si tous les dés sont mis de côté (hot dice), recharge un lancer de 5 dés.
-   */
-  const setAsideSelection = useCallback(() => {
-    setTurn((prev) => {
       const selectedValues = prev.selectedIndices.map((i) => prev.dice[i]);
       const { points, isFullyScoring, breakdown } = scoreSelection(selectedValues);
       if (!isFullyScoring || points === 0) return prev;
 
       const remainingCount = prev.dice.length - prev.selectedIndices.length;
-      const nextDiceAvailable = remainingCount === 0 ? INITIAL_DICE_COUNT : remainingCount;
+      const diceToRoll = remainingCount === 0 ? INITIAL_DICE_COUNT : remainingCount;
+      const newDice = rollDice(diceToRoll);
+      const newTurnScore = prev.turnScore + points;
 
+      if (!hasScoringOption(newDice)) {
+        return {
+          ...prev,
+          phase: 'farkled',
+          dice: newDice,
+          selectedIndices: [],
+          turnScore: newTurnScore,
+          diceAvailableForRoll: diceToRoll,
+          lastRollBreakdown: breakdown,
+        };
+      }
+
+      const autoSelected = bestSelection(newDice);
       return {
         ...prev,
-        phase: 'ready', // prêt à relancer (ou le joueur peut s'arrêter ici)
-        dice: [],
-        selectedIndices: [],
-        turnScore: prev.turnScore + points,
-        diceAvailableForRoll: nextDiceAvailable,
+        phase: 'rolled',
+        dice: newDice,
+        selectedIndices: autoSelected,
+        turnScore: newTurnScore,
+        diceAvailableForRoll: diceToRoll,
         lastRollBreakdown: breakdown,
       };
     });
   }, []);
 
   /**
-   * Action atomique pour le bot : sélectionne les dés aux indices donnés
-   * et les met de côté en un seul setState (évite les problèmes de batching React).
-   * @param {number[]} indices
+   * Met de côté les dés auto-sélectionnés ET banque (arrêt volontaire).
+   * turnScore final = accumulé + points de la sélection courante.
    */
-  const selectAndSetAside = useCallback((indices) => {
+  const bankWithSelection = useCallback(() => {
     setTurn((prev) => {
-      const selectedValues = indices.map((i) => prev.dice[i]);
-      const { points, isFullyScoring, breakdown } = scoreSelection(selectedValues);
+      if (prev.phase !== 'rolled') return prev;
+      const selectedValues = prev.selectedIndices.map((i) => prev.dice[i]);
+      const { points, isFullyScoring } = scoreSelection(selectedValues);
       if (!isFullyScoring || points === 0) return prev;
-      const remainingCount = prev.dice.length - indices.length;
-      const nextDiceAvailable = remainingCount === 0 ? INITIAL_DICE_COUNT : remainingCount;
-      return {
-        ...prev,
-        phase: 'ready',
-        dice: [],
-        selectedIndices: [],
-        turnScore: prev.turnScore + points,
-        diceAvailableForRoll: nextDiceAvailable,
-        lastRollBreakdown: breakdown,
-      };
+      return { ...prev, phase: 'banked', turnScore: prev.turnScore + points };
     });
-  }, []);
-
-  /**
-   * Le joueur choisit de s'arrêter et de garder les points accumulés ce tour.
-   */
-  const bank = useCallback(() => {
-    setTurn((prev) => ({ ...prev, phase: 'banked' }));
   }, []);
 
   const resetTurn = useCallback(() => {
@@ -123,11 +101,8 @@ export function useTurn() {
   return {
     turn,
     roll,
-    toggleDieSelection,
-    getSelectionScore,
-    setAsideSelection,
-    selectAndSetAside,
-    bank,
+    rollWithSelection,
+    bankWithSelection,
     resetTurn,
   };
 }
