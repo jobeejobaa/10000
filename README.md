@@ -45,8 +45,9 @@ Deux boutons seulement : **Relancer X dés** ou **Garder N pts**.
 Chaque joueur rejoint la partie depuis son propre téléphone. Les scores et l'état du plateau se synchronisent en temps réel via **Firebase Realtime Database**.
 
 - Le joueur en attente voit le plateau adverse mis à jour à chaque lancer (zone aside + dés restants + score du tour)
-- Si tu fermes la page par erreur, une bannière "Reprendre la partie" apparaît au prochain lancement de l'app
-- Si tu te souviens du code, tu peux aussi rejoindre manuellement : l'app te reconnecte même si la partie est déjà lancée (ton UID est reconnu)
+- **Lien d'invitation** : dans la salle d'attente, un bouton "🔗 Copier le lien d'invitation" génère une URL `?room=XXXX&mode=game` à partager. En l'ouvrant, l'app pré-remplit le code — plus besoin de dicter le code lettre par lettre
+- **Rejoin par nom** : si la partie est lancée et que l'UID a changé (reinstall, autre navigateur), entrer le même prénom suffit à récupérer son slot
+- **Reprendre après fermeture** : une bannière "Reprendre la partie" apparaît au prochain lancement si une session est en cours
 
 ### Mise en place Firebase (à faire une fois)
 
