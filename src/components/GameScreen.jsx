@@ -39,8 +39,9 @@ export function GameScreen({ game, onTurnEnd, onQuit, onTurnProgress }) {
   const remainingDiceCount = nonScoringDice.length === 0 ? 5 : nonScoringDice.length;
   const isHotDice = turn.phase === 'rolled' && nonScoringDice.length === 0;
   const wouldBust = currentPlayer.hasOpenedScore && (currentPlayer.score + totalIfBank) > 10000;
+  const isWinningBank = currentPlayer.hasOpenedScore && totalIfBank === 10000;
   const canBank = turn.phase === 'rolled' && !showAllOnBoard
-    && totalIfBank > 0 && !isHotDice
+    && totalIfBank > 0 && (!isHotDice || isWinningBank)
     && (currentPlayer.hasOpenedScore || totalIfBank >= MINIMUM_SCORE_TO_OPEN)
     && !wouldBust;
 
@@ -112,6 +113,13 @@ export function GameScreen({ game, onTurnEnd, onQuit, onTurnProgress }) {
     }
   }, [turn.phase, turn.turnScore, onTurnEnd]);
 
+  // ── Victoire exacte à 10 000 : bank automatique ──────────────────────────────
+  useEffect(() => {
+    if (turn.phase !== 'rolled' || showAllOnBoard || !isWinningBank) return;
+    const timeout = setTimeout(() => onTurnEnd(totalIfBank, false), 1200);
+    return () => clearTimeout(timeout);
+  }, [turn.phase, showAllOnBoard, isWinningBank]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // ── Bust : fin de tour auto quand on dépasse 10 000 (pas un farkle) ─────────
   useEffect(() => {
     if (turn.phase !== 'rolled' || showAllOnBoard || !wouldBust) return;
@@ -128,7 +136,7 @@ export function GameScreen({ game, onTurnEnd, onQuit, onTurnProgress }) {
       return () => clearTimeout(timer);
     }
 
-    if (turn.phase === 'rolled' && !showAllOnBoard && !wouldBust) {
+    if (turn.phase === 'rolled' && !showAllOnBoard && !wouldBust && !isWinningBank) {
       const decision = decideBotAction(totalIfBank, remainingDiceCount, currentPlayer);
       const timer = setTimeout(() => {
         if (decision === 'bank') bankWithSelection();
@@ -213,7 +221,13 @@ export function GameScreen({ game, onTurnEnd, onQuit, onTurnProgress }) {
           </p>
         )}
 
-        {!isBot && isHotDice && !showAllOnBoard && (
+        {!showAllOnBoard && isWinningBank && (
+          <p className="game-screen__message game-screen__message--gold">
+            🎉 10 000 points pile — tu gagnes !
+          </p>
+        )}
+
+        {!isBot && isHotDice && !showAllOnBoard && !isWinningBank && (
           <p className="game-screen__message game-screen__message--gold">
             🔥 Hot dice ! Tous tes dés ont scoré — relance les 5 !
           </p>
@@ -255,7 +269,7 @@ export function GameScreen({ game, onTurnEnd, onQuit, onTurnProgress }) {
                     Garder {totalIfBank} pts
                   </button>
                 )}
-                {wouldBust ? (
+                {!isWinningBank && (wouldBust ? (
                   <button
                     type="button"
                     className="game-screen__btn game-screen__btn--secondary"
@@ -271,7 +285,7 @@ export function GameScreen({ game, onTurnEnd, onQuit, onTurnProgress }) {
                   >
                     {isHotDice ? '🔥 Relancer 5 dés' : `Relancer ${remainingDiceCount} dé${remainingDiceCount > 1 ? 's' : ''}`}
                   </button>
-                )}
+                ))}
               </>
             )}
 
