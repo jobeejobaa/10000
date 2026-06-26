@@ -170,6 +170,7 @@ export function MultiplayerGameScreen({ roomCode: roomCodeProp, uid, initialRoom
           {order.map((id, idx) => {
             const player = game.players[idx];
             const isActive = id === currentUid;
+            const farkles = game.consecutiveFarkles?.[idx] ?? 0;
             return (
               <div
                 key={id}
@@ -178,6 +179,9 @@ export function MultiplayerGameScreen({ roomCode: roomCodeProp, uid, initialRoom
                 <span className="mp-game__score-name">
                   {names[id]}
                   {id === uid && ' 👤'}
+                  {farkles > 0 && (
+                    <span className="mp-game__score-farkles">{'✕'.repeat(farkles)}</span>
+                  )}
                 </span>
                 <span className="mp-game__score-value">
                   {player?.score?.toLocaleString('fr-FR') ?? 0} pts

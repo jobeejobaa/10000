@@ -215,6 +215,15 @@
 .mp-game__score-name {
   color: var(--color-cream);
   font-size: 15px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.mp-game__score-farkles {
+  font-size: 11px;
+  color: #e57373;
+  letter-spacing: 2px;
 }
 
 .mp-game__score-value {
