@@ -151,6 +151,31 @@
 }
 
 /* ── Zone "mis de côté" — dés scorants auto-sélectionnés ── */
+
+/* Animation : les dés s'envolent du plateau vers le haut */
+@keyframes dice-fly-to-aside {
+  0% {
+    transform: translateY(120px) scale(0.65);
+    opacity: 0;
+  }
+  60% {
+    opacity: 1;
+  }
+  80% {
+    transform: translateY(-8px) scale(1.04);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+/* Légère pulsation dorée sur les dés scorants pendant la pause sur le plateau */
+@keyframes scoring-glow {
+  0%, 100% { filter: drop-shadow(0 0 0px rgba(212, 175, 55, 0)); }
+  50%       { filter: drop-shadow(0 0 6px rgba(212, 175, 55, 0.9)); }
+}
+
 .game-screen__aside-zone {
   display: flex;
   align-items: center;
@@ -162,6 +187,8 @@
   border-radius: 14px;
   padding: 8px 14px;
   margin: 0.5rem 0 -0.25rem;
+  /* L'animation se déclenche à chaque fois que la zone apparaît dans le DOM */
+  animation: dice-fly-to-aside 0.45s cubic-bezier(0.2, 0.8, 0.2, 1.2) both;
 }
 
 .game-screen__aside-label {
@@ -185,6 +212,24 @@
   height: 40px;
 }
 
+/* Délai en cascade sur chaque dé pour un effet de "vol en V" */
+.game-screen__aside-dice .die:nth-child(1) { animation-delay: 0ms; }
+.game-screen__aside-dice .die:nth-child(2) { animation-delay: 35ms; }
+.game-screen__aside-dice .die:nth-child(3) { animation-delay: 70ms; }
+.game-screen__aside-dice .die:nth-child(4) { animation-delay: 105ms; }
+.game-screen__aside-dice .die:nth-child(5) { animation-delay: 140ms; }
+
+/* Les dés dans la zone aside ont leur propre micro-animation pour renforcer le vol */
+@keyframes die-land {
+  0%   { transform: translateY(20px) rotate(-8deg) scale(0.8); opacity: 0; }
+  70%  { transform: translateY(-4px) rotate(2deg) scale(1.05); opacity: 1; }
+  100% { transform: translateY(0) rotate(0deg) scale(1); opacity: 1; }
+}
+
+.game-screen__aside-dice .die {
+  animation: die-land 0.38s cubic-bezier(0.2, 0.8, 0.2, 1.2) both;
+}
+
 .game-screen__aside-score {
   font-family: var(--font-display);
   font-size: 16px;
@@ -192,4 +237,9 @@
   color: var(--color-gold);
   white-space: nowrap;
   flex-shrink: 0;
+}
+
+/* Pendant la pause sur le plateau : les dés scorants (sélectionnés) brillent */
+.board__dice .die--selected {
+  animation: scoring-glow 0.55s ease-in-out 0.52s 1 both;
 }
