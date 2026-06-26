@@ -122,7 +122,7 @@ export function useRoom(initialCode = null) {
     if (currentUid !== uid) return;
 
     const newGame = applyTurnResult(currentGame, turnScore, farkled);
-    const updates = { 'gameState/game': newGame };
+    const updates = { 'gameState/game': newGame, spectatorView: null };
     if (isGameOver(newGame)) updates.status = 'finished';
     await update(ref(db, `rooms/${roomCode}`), updates);
   }, [roomCode, roomData, uid]);
@@ -174,11 +174,17 @@ export function useRoom(initialCode = null) {
     await update(ref(db, `rooms/${roomCode}`), updates);
   }, [roomCode, roomData, uid]);
 
+  /** Mode 'game' — synchronise l'état du tour courant pour les spectateurs. */
+  const syncTurnView = useCallback(async (data) => {
+    if (!roomCode) return;
+    await update(ref(db, `rooms/${roomCode}`), { spectatorView: data });
+  }, [roomCode]);
+
   const leaveRoom = useCallback(() => {
     if (unsubRef.current) unsubRef.current();
     setRoomCode(null);
     setRoomData(null);
   }, []);
 
-  return { uid, roomCode, roomData, error, createRoom, joinRoom, startGame, submitGameTurn, submitTurn, leaveRoom };
+  return { uid, roomCode, roomData, error, createRoom, joinRoom, startGame, submitGameTurn, submitTurn, syncTurnView, leaveRoom };
 }

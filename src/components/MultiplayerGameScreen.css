@@ -53,28 +53,132 @@
   margin: 0 auto;
 }
 
-.mp-game__waiting-banner {
-  background: rgba(212, 175, 55, 0.08);
-  border: 1px solid rgba(212, 175, 55, 0.25);
-  border-radius: 16px;
-  padding: 1.5rem;
-  text-align: center;
+/* ── Bannière spectateur ── */
+.mp-game__spectator-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0.6rem 1rem;
+  background: rgba(212, 175, 55, 0.07);
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  border-radius: 12px;
 }
 
-.mp-game__waiting-icon {
-  font-size: 40px;
-  display: block;
-  margin-bottom: 10px;
+.mp-game__spectator-icon {
+  font-size: 20px;
 }
 
-.mp-game__waiting-text {
+.mp-game__spectator-text {
   color: var(--color-cream-dim);
-  font-size: 17px;
+  font-size: 15px;
   margin: 0;
 }
 
-.mp-game__waiting-text strong {
+.mp-game__spectator-text strong {
   color: var(--color-cream);
+}
+
+/* ── Zone aside (dés scorants adversaire) ── */
+@keyframes sv-dice-fly {
+  0%   { transform: translateY(100px) scale(0.65); opacity: 0; }
+  60%  { opacity: 1; }
+  80%  { transform: translateY(-6px) scale(1.03); }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+@keyframes sv-die-land {
+  0%   { transform: translateY(16px) rotate(-6deg) scale(0.8); opacity: 0; }
+  70%  { transform: translateY(-3px) rotate(2deg) scale(1.04); opacity: 1; }
+  100% { transform: translateY(0) rotate(0deg) scale(1); opacity: 1; }
+}
+
+.mp-game__spectator-aside {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(212, 175, 55, 0.08);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  border-radius: 14px;
+  padding: 8px 14px;
+  animation: sv-dice-fly 0.45s cubic-bezier(0.2, 0.8, 0.2, 1.2) both;
+}
+
+.mp-game__spectator-aside-label {
+  font-size: 11px;
+  color: var(--color-cream-dim);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.mp-game__spectator-aside-dice {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  flex: 1;
+  justify-content: center;
+}
+
+.mp-game__spectator-aside-dice .die {
+  width: 40px;
+  height: 40px;
+  animation: sv-die-land 0.38s cubic-bezier(0.2, 0.8, 0.2, 1.2) both;
+}
+
+.mp-game__spectator-aside-dice .die:nth-child(1) { animation-delay: 0ms; }
+.mp-game__spectator-aside-dice .die:nth-child(2) { animation-delay: 35ms; }
+.mp-game__spectator-aside-dice .die:nth-child(3) { animation-delay: 70ms; }
+.mp-game__spectator-aside-dice .die:nth-child(4) { animation-delay: 105ms; }
+.mp-game__spectator-aside-dice .die:nth-child(5) { animation-delay: 140ms; }
+
+.mp-game__spectator-aside-score {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-gold);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ── Farkle adversaire ── */
+.mp-game__spectator-farkle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.mp-game__spectator-farkle-msg {
+  font-size: 20px;
+  font-family: var(--font-display);
+  color: var(--color-danger);
+  margin: 0.25rem 0 0;
+  text-align: center;
+}
+
+/* ── Score du tour adversaire ── */
+.mp-game__spectator-turn-score {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  justify-content: center;
+}
+
+.mp-game__spectator-turn-label {
+  font-size: 13px;
+  color: var(--color-cream-dim);
+}
+
+.mp-game__spectator-turn-value {
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 600;
+  color: var(--color-gold);
+}
+
+.mp-game__spectator-waiting {
+  text-align: center;
+  font-size: 14px;
+  color: var(--color-cream-dim);
+  margin: 0;
 }
 
 .mp-game__scores {

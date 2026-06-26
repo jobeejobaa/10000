@@ -18,7 +18,7 @@ const ROLLING_DURATION = 500;    // animation des dés qui roulent
 const PAUSE_ON_BOARD = 500;      // pause où les dés scorants sont visibles en or
 const TOTAL_SHOW = ROLLING_DURATION + PAUSE_ON_BOARD; // 1000ms avant envol
 
-export function GameScreen({ game, onTurnEnd, onQuit }) {
+export function GameScreen({ game, onTurnEnd, onQuit, onTurnProgress }) {
   const { turn, roll, rollWithSelection, bankWithSelection, resetTurn } = useTurn();
   const [isRolling, setIsRolling] = useState(false);
   // true = tous les dés affichés sur le plateau (phase intermédiaire avant l'envol)
@@ -82,6 +82,24 @@ export function GameScreen({ game, onTurnEnd, onQuit }) {
   const { isSupported, permissionState, requestPermission } = useShakeDetection(handleShake);
   const needsPermissionPrompt = isSupported && permissionState === 'unknown';
   const shakeIsActive = isSupported && (permissionState === 'granted' || permissionState === 'not-required');
+
+  // ── Sync état du tour vers Firebase (vue spectateur multijoueur) ──────────
+  useEffect(() => {
+    if (!onTurnProgress || isBot) return;
+    if (turn.phase === 'rolled') {
+      onTurnProgress({
+        phase: 'rolled',
+        dice: turn.dice,
+        selectedIndices: turn.selectedIndices,
+        turnScore: turn.turnScore,
+        selectionScore,
+        totalIfBank,
+        showAllOnBoard,
+      });
+    } else if (turn.phase === 'farkled') {
+      onTurnProgress({ phase: 'farkled', dice: turn.dice, selectedIndices: [] });
+    }
+  }, [turn.phase, showAllOnBoard]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Fin de tour automatique ──────────────────────────────────────────────────
   useEffect(() => {
