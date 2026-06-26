@@ -112,6 +112,13 @@ export function GameScreen({ game, onTurnEnd, onQuit, onTurnProgress }) {
     }
   }, [turn.phase, turn.turnScore, onTurnEnd]);
 
+  // ── Bust : fin de tour auto quand on dépasse 10 000 (pas un farkle) ─────────
+  useEffect(() => {
+    if (turn.phase !== 'rolled' || showAllOnBoard || !wouldBust) return;
+    const timeout = setTimeout(() => onTurnEnd(totalIfBank, false), 1500);
+    return () => clearTimeout(timeout);
+  }, [turn.phase, showAllOnBoard, wouldBust]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // ── Tour du bot ──────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!isBot) return;
@@ -121,7 +128,7 @@ export function GameScreen({ game, onTurnEnd, onQuit, onTurnProgress }) {
       return () => clearTimeout(timer);
     }
 
-    if (turn.phase === 'rolled' && !showAllOnBoard) {
+    if (turn.phase === 'rolled' && !showAllOnBoard && !wouldBust) {
       const decision = decideBotAction(totalIfBank, remainingDiceCount, currentPlayer);
       const timer = setTimeout(() => {
         if (decision === 'bank') bankWithSelection();
@@ -129,7 +136,7 @@ export function GameScreen({ game, onTurnEnd, onQuit, onTurnProgress }) {
       }, BOT_DECIDE_DELAY);
       return () => clearTimeout(timer);
     }
-  }, [turn.phase, isBot, showAllOnBoard]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [turn.phase, isBot, showAllOnBoard, wouldBust]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Dés affichés sur le plateau ──────────────────────────────────────────────
   // showAllOnBoard=true → tous les dés (scorants=or, autres=estompés)
@@ -212,9 +219,9 @@ export function GameScreen({ game, onTurnEnd, onQuit, onTurnProgress }) {
           </p>
         )}
 
-        {!isBot && !isHotDice && wouldBust && turn.phase === 'rolled' && !showAllOnBoard && (
+        {!isHotDice && wouldBust && turn.phase === 'rolled' && !showAllOnBoard && (
           <p className="game-screen__message game-screen__message--danger">
-            ⚠️ Si tu gardes, tu dépasses 10 000 — ton tour serait annulé !
+            💥 Tu dépasses 10 000 — ton tour est annulé !
           </p>
         )}
 
@@ -248,13 +255,23 @@ export function GameScreen({ game, onTurnEnd, onQuit, onTurnProgress }) {
                     Garder {totalIfBank} pts
                   </button>
                 )}
-                <button
-                  type="button"
-                  className="game-screen__btn game-screen__btn--primary"
-                  onClick={doRollWithSelection}
-                >
-                  {isHotDice ? '🔥 Relancer 5 dés' : `Relancer ${remainingDiceCount} dé${remainingDiceCount > 1 ? 's' : ''}`}
-                </button>
+                {wouldBust ? (
+                  <button
+                    type="button"
+                    className="game-screen__btn game-screen__btn--secondary"
+                    onClick={() => onTurnEnd(totalIfBank, false)}
+                  >
+                    Fin de tour →
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="game-screen__btn game-screen__btn--primary"
+                    onClick={doRollWithSelection}
+                  >
+                    {isHotDice ? '🔥 Relancer 5 dés' : `Relancer ${remainingDiceCount} dé${remainingDiceCount > 1 ? 's' : ''}`}
+                  </button>
+                )}
               </>
             )}
 
