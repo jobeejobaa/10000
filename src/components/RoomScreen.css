@@ -170,6 +170,30 @@
   margin: 0;
 }
 
+.room-screen__copy-link {
+  margin-top: 10px;
+  background: rgba(212, 175, 55, 0.12);
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  color: var(--color-gold);
+  font-size: 13px;
+  font-family: var(--font-body);
+  padding: 8px 16px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+  width: 100%;
+}
+
+.room-screen__copy-link:hover {
+  background: rgba(212, 175, 55, 0.2);
+}
+
+.room-screen__copy-link--copied {
+  background: rgba(76, 175, 80, 0.15);
+  border-color: rgba(76, 175, 80, 0.4);
+  color: #81c784;
+}
+
 .room-screen__section-label {
   font-size: 13px;
   color: var(--color-cream-dim);

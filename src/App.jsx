@@ -16,6 +16,16 @@ function readSavedSession() {
   try { return JSON.parse(localStorage.getItem(SESSION_KEY)); } catch { return null; }
 }
 
+/** Lit ?room=XXXX&mode=game dans l'URL, nettoie l'URL et retourne { code, mode } ou null. */
+function readUrlRoom() {
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get('room')?.toUpperCase().trim() ?? null;
+  if (!code) return null;
+  const mode = params.get('mode') === 'sheet' ? 'sheet' : 'game';
+  window.history.replaceState({}, '', window.location.pathname);
+  return { code, mode };
+}
+
 export default function App() {
   const [game, setGame] = useState(null);
   const [sheetPlayers, setSheetPlayers] = useState(null);
@@ -24,6 +34,7 @@ export default function App() {
   const [multiplayerSession, setMultiplayerSession] = useState(null);
   const [autoRejoin, setAutoRejoin] = useState(null);
   const [savedSession] = useState(readSavedSession);
+  const [urlRoom] = useState(readUrlRoom);
   const savedRef = useRef(false);
 
   const handleStart = useCallback((playerDefs, mode) => {
@@ -90,6 +101,20 @@ export default function App() {
 
   if (showHistory) {
     return <GameHistory onClose={() => setShowHistory(false)} />;
+  }
+
+  // Lien direct ?room=XXXX → aller directement à la salle sans passer par SetupScreen
+  if (urlRoom && !multiplayerSession) {
+    const gameMode = urlRoom.mode;
+    return (
+      <RoomScreen
+        gameMode={gameMode}
+        prefillCode={urlRoom.code}
+        prefillName={savedSession?.playerName ?? null}
+        onGameStart={(session) => setMultiplayerSession({ ...session, mode: gameMode })}
+        onQuit={handleQuit}
+      />
+    );
   }
 
   // Écran de salle — on passe le mode (game ou sheet) à RoomScreen

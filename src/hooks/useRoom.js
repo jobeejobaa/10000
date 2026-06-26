@@ -75,7 +75,35 @@ export function useRoom(initialCode = null) {
       setRoomCode(upper);
       return true;
     }
-    if (data.status !== 'waiting') { setError('Cette partie a déjà commencé.'); return false; }
+    if (data.status !== 'waiting') {
+      // Partie lancée mais UID inconnu → essai de réassignation par nom
+      const existingNames = data.playerNames ?? {};
+      const oldUid = Object.keys(existingNames).find((id) => existingNames[id] === playerName);
+      if (!oldUid) {
+        setError('Cette partie a déjà commencé. Vérifie ton prénom ou le code.');
+        return false;
+      }
+      // Réassigner le slot de l'ancien UID vers le nouvel UID
+      const newOrder = currentOrder.map((id) => (id === oldUid ? uid : id));
+      const updates = {
+        [`playerNames/${uid}`]: playerName,
+        [`playerNames/${oldUid}`]: null,   // Firebase supprime la clé
+        playerOrder: newOrder,
+      };
+      // Mode sheet : migrer les entrées et le compteur de farkles
+      const gs = data.gameState ?? {};
+      if (gs.entries?.[oldUid] !== undefined) {
+        updates[`gameState/entries/${uid}`] = gs.entries[oldUid];
+        updates[`gameState/entries/${oldUid}`] = null;
+      }
+      if (gs.consecutiveFarkles?.[oldUid] !== undefined) {
+        updates[`gameState/consecutiveFarkles/${uid}`] = gs.consecutiveFarkles[oldUid];
+        updates[`gameState/consecutiveFarkles/${oldUid}`] = null;
+      }
+      await update(ref(db, `rooms/${upper}`), updates);
+      setRoomCode(upper);
+      return true;
+    }
     await update(ref(db, `rooms/${upper}`), {
       [`playerNames/${uid}`]: playerName,
       playerOrder: [...currentOrder, uid],

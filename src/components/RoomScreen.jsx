@@ -4,11 +4,19 @@ import './RoomScreen.css';
 
 const SESSION_KEY = 'le10k_session';
 
-export function RoomScreen({ onGameStart, onQuit, gameMode = 'sheet', autoRejoin = null }) {
-  const [tab, setTab] = useState('create');          // 'create' | 'join'
-  const [name, setName] = useState(autoRejoin?.playerName ?? '');
-  const [codeInput, setCodeInput] = useState('');
+export function RoomScreen({
+  onGameStart,
+  onQuit,
+  gameMode = 'sheet',
+  autoRejoin = null,
+  prefillCode = null,
+  prefillName = null,
+}) {
+  const [tab, setTab] = useState(prefillCode ? 'join' : 'create');
+  const [name, setName] = useState(prefillName ?? autoRejoin?.playerName ?? '');
+  const [codeInput, setCodeInput] = useState(prefillCode ?? '');
   const [loading, setLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
   const startedRef = useRef(false);
 
   const { uid, roomCode, roomData, error, createRoom, joinRoom, rejoinRoom, startGame, leaveRoom } = useRoom();
@@ -30,7 +38,7 @@ export function RoomScreen({ onGameStart, onQuit, gameMode = 'sheet', autoRejoin
       setLoading(false);
       if (!ok) {
         localStorage.removeItem(SESSION_KEY);
-        onQuit(); // salle introuvable ou joueur pas dedans
+        onQuit();
       }
     });
   }, [uid]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -44,7 +52,7 @@ export function RoomScreen({ onGameStart, onQuit, gameMode = 'sheet', autoRejoin
     }
   }, [roomData?.status]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Quand la partie démarre, on remonte les données à App (dans un effect, pas dans le render)
+  // Quand la partie démarre → remonter les données à App
   useEffect(() => {
     if (roomData?.status === 'playing' && uid && roomCode && !startedRef.current) {
       startedRef.current = true;
@@ -84,6 +92,14 @@ export function RoomScreen({ onGameStart, onQuit, gameMode = 'sheet', autoRejoin
     onQuit();
   }
 
+  function handleCopyLink() {
+    const url = `${window.location.origin}?room=${roomCode}&mode=${gameMode}`;
+    navigator.clipboard.writeText(url).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }
+
   // ── Salle d'attente ──────────────────────────────────────────────────────
   if (roomCode && roomData) {
     return (
@@ -99,7 +115,13 @@ export function RoomScreen({ onGameStart, onQuit, gameMode = 'sheet', autoRejoin
           <div className="room-screen__code-box">
             <p className="room-screen__code-label">Code de la salle</p>
             <p className="room-screen__code">{roomCode}</p>
-            <p className="room-screen__code-hint">Donne ce code aux autres joueurs</p>
+            <button
+              type="button"
+              className={`room-screen__copy-link${copied ? ' room-screen__copy-link--copied' : ''}`}
+              onClick={handleCopyLink}
+            >
+              {copied ? '✓ Lien copié !' : '🔗 Copier le lien d\'invitation'}
+            </button>
           </div>
 
           <div className="room-screen__players">
@@ -183,6 +205,7 @@ export function RoomScreen({ onGameStart, onQuit, gameMode = 'sheet', autoRejoin
             value={name}
             onChange={(e) => setName(e.target.value)}
             maxLength={20}
+            autoFocus={!!prefillCode}
           />
 
           {tab === 'join' && (
@@ -196,6 +219,7 @@ export function RoomScreen({ onGameStart, onQuit, gameMode = 'sheet', autoRejoin
                 onChange={(e) => setCodeInput(e.target.value.toUpperCase())}
                 maxLength={4}
                 autoCapitalize="characters"
+                inputMode="text"
               />
             </>
           )}
