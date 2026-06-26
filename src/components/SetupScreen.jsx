@@ -4,7 +4,7 @@ import './SetupScreen.css';
 
 const MAX_PLAYERS = 4;
 
-export function SetupScreen({ onStart, onShowHistory }) {
+export function SetupScreen({ onStart, onShowHistory, savedSession = null, onResume }) {
   const [playerCount, setPlayerCount] = useState(2);
   const [names, setNames] = useState(['', '', '', '']);
   const [mode, setMode] = useState('game');   // 'game' | 'sheet'
@@ -45,6 +45,21 @@ export function SetupScreen({ onStart, onShowHistory }) {
     <div className="setup">
       <h1 className="setup__title">Le 10 000</h1>
       <p className="setup__subtitle">Secoue ton téléphone pour lancer les dés</p>
+
+      {savedSession && (
+        <div className="setup__resume-banner">
+          <div className="setup__resume-info">
+            <span className="setup__resume-icon">🔗</span>
+            <div>
+              <p className="setup__resume-title">Partie en cours</p>
+              <p className="setup__resume-sub">Salle {savedSession.roomCode} — {savedSession.playerName}</p>
+            </div>
+          </div>
+          <button type="button" className="setup__resume-btn" onClick={onResume}>
+            Reprendre
+          </button>
+        </div>
+      )}
 
       <div className="setup__section">
         <p className="setup__label">Nombre de joueurs</p>

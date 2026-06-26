@@ -17,7 +17,63 @@
 .setup__subtitle {
   font-size: 14px;
   color: var(--color-cream-dim);
-  margin: 8px 0 2.5rem;
+  margin: 8px 0 1.25rem;
+}
+
+/* ── Bannière "Reprendre la partie" ── */
+.setup__resume-banner {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: rgba(212, 175, 55, 0.1);
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  border-radius: 14px;
+  padding: 12px 14px;
+  margin-bottom: 1.5rem;
+}
+
+.setup__resume-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.setup__resume-icon {
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+.setup__resume-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-gold);
+  margin: 0;
+}
+
+.setup__resume-sub {
+  font-size: 12px;
+  color: var(--color-cream-dim);
+  margin: 2px 0 0;
+}
+
+.setup__resume-btn {
+  flex-shrink: 0;
+  background: var(--color-gold);
+  color: var(--color-felt-dark);
+  border: none;
+  border-radius: 10px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: var(--font-display);
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.setup__resume-btn:hover {
+  opacity: 0.88;
 }
 
 .setup__section {

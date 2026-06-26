@@ -2,14 +2,16 @@ import { useState, useEffect, useRef } from 'react';
 import { useRoom } from '../hooks/useRoom.js';
 import './RoomScreen.css';
 
-export function RoomScreen({ onGameStart, onQuit, gameMode = 'sheet' }) {
+const SESSION_KEY = 'le10k_session';
+
+export function RoomScreen({ onGameStart, onQuit, gameMode = 'sheet', autoRejoin = null }) {
   const [tab, setTab] = useState('create');          // 'create' | 'join'
-  const [name, setName] = useState('');
+  const [name, setName] = useState(autoRejoin?.playerName ?? '');
   const [codeInput, setCodeInput] = useState('');
   const [loading, setLoading] = useState(false);
   const startedRef = useRef(false);
 
-  const { uid, roomCode, roomData, error, createRoom, joinRoom, startGame, leaveRoom } = useRoom();
+  const { uid, roomCode, roomData, error, createRoom, joinRoom, rejoinRoom, startGame, leaveRoom } = useRoom();
 
   const isHost = roomData?.host === uid;
   const players = roomData
@@ -19,6 +21,28 @@ export function RoomScreen({ onGameStart, onQuit, gameMode = 'sheet' }) {
         isHost: id === roomData.host,
       }))
     : [];
+
+  // ── Rejoin automatique si on revient sur une salle en cours ──────────────
+  useEffect(() => {
+    if (!autoRejoin || !uid) return;
+    setLoading(true);
+    rejoinRoom(autoRejoin.code).then((ok) => {
+      setLoading(false);
+      if (!ok) {
+        localStorage.removeItem(SESSION_KEY);
+        onQuit(); // salle introuvable ou joueur pas dedans
+      }
+    });
+  }, [uid]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Si on revient sur une salle TERMINÉE → effacer + quitter
+  useEffect(() => {
+    if (autoRejoin && roomData?.status === 'finished') {
+      localStorage.removeItem(SESSION_KEY);
+      leaveRoom();
+      onQuit();
+    }
+  }, [roomData?.status]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Quand la partie démarre, on remonte les données à App (dans un effect, pas dans le render)
   useEffect(() => {
@@ -31,14 +55,20 @@ export function RoomScreen({ onGameStart, onQuit, gameMode = 'sheet' }) {
   async function handleCreate() {
     if (!name.trim()) return;
     setLoading(true);
-    await createRoom(name.trim(), gameMode);
+    const code = await createRoom(name.trim(), gameMode);
+    if (code) {
+      localStorage.setItem(SESSION_KEY, JSON.stringify({ roomCode: code, playerName: name.trim(), mode: gameMode }));
+    }
     setLoading(false);
   }
 
   async function handleJoin() {
     if (!name.trim() || !codeInput.trim()) return;
     setLoading(true);
-    await joinRoom(codeInput, name.trim());
+    const ok = await joinRoom(codeInput, name.trim());
+    if (ok) {
+      localStorage.setItem(SESSION_KEY, JSON.stringify({ roomCode: codeInput.toUpperCase().trim(), playerName: name.trim(), mode: gameMode }));
+    }
     setLoading(false);
   }
 
@@ -49,6 +79,7 @@ export function RoomScreen({ onGameStart, onQuit, gameMode = 'sheet' }) {
   }
 
   function handleLeave() {
+    localStorage.removeItem(SESSION_KEY);
     leaveRoom();
     onQuit();
   }
@@ -94,6 +125,22 @@ export function RoomScreen({ onGameStart, onQuit, gameMode = 'sheet' }) {
           ) : (
             <p className="room-screen__waiting">En attente que l'hôte lance la partie…</p>
           )}
+        </div>
+      </div>
+    );
+  }
+
+  // ── Chargement rejoin ────────────────────────────────────────────────────
+  if (autoRejoin && loading) {
+    return (
+      <div className="room-screen">
+        <header className="room-screen__header">
+          <span className="room-screen__header-title">Le 10 000</span>
+        </header>
+        <div className="room-screen__content">
+          <p style={{ color: 'var(--color-cream-dim)', textAlign: 'center', marginTop: '3rem' }}>
+            Reconnexion à la salle {autoRejoin.code}…
+          </p>
         </div>
       </div>
     );

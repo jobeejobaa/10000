@@ -10,12 +10,20 @@ import { MultiplayerGameScreen } from './components/MultiplayerGameScreen.jsx';
 import { createGame, applyTurnResult, isGameOver } from './game/gameState.js';
 import { saveToHistory } from './utils/history.js';
 
+const SESSION_KEY = 'le10k_session';
+
+function readSavedSession() {
+  try { return JSON.parse(localStorage.getItem(SESSION_KEY)); } catch { return null; }
+}
+
 export default function App() {
   const [game, setGame] = useState(null);
   const [sheetPlayers, setSheetPlayers] = useState(null);
   const [showHistory, setShowHistory] = useState(false);
   // 'room_game' | 'room_sheet' | { roomCode, uid, roomData, leaveRoom, mode } | null
   const [multiplayerSession, setMultiplayerSession] = useState(null);
+  const [autoRejoin, setAutoRejoin] = useState(null);
+  const [savedSession] = useState(readSavedSession);
   const savedRef = useRef(false);
 
   const handleStart = useCallback((playerDefs, mode) => {
@@ -40,11 +48,20 @@ export default function App() {
   }, []);
 
   const handleQuit = useCallback(() => {
+    localStorage.removeItem(SESSION_KEY);
     setGame(null);
     setSheetPlayers(null);
     setMultiplayerSession(null);
+    setAutoRejoin(null);
     savedRef.current = false;
   }, []);
+
+  const handleResume = useCallback(() => {
+    if (!savedSession) return;
+    const onlineMode = `online_${savedSession.mode}`;
+    setMultiplayerSession(onlineMode);
+    setAutoRejoin({ code: savedSession.roomCode, playerName: savedSession.playerName });
+  }, [savedSession]);
 
   // Sauvegarde automatique quand une partie numérique se termine
   useEffect(() => {
@@ -81,6 +98,7 @@ export default function App() {
     return (
       <RoomScreen
         gameMode={gameMode}
+        autoRejoin={autoRejoin}
         onGameStart={(session) => setMultiplayerSession({ ...session, mode: gameMode })}
         onQuit={handleQuit}
       />
@@ -114,7 +132,14 @@ export default function App() {
   }
 
   if (!game) {
-    return <SetupScreen onStart={handleStart} onShowHistory={() => setShowHistory(true)} />;
+    return (
+      <SetupScreen
+        onStart={handleStart}
+        onShowHistory={() => setShowHistory(true)}
+        savedSession={savedSession}
+        onResume={handleResume}
+      />
+    );
   }
 
   if (isGameOver(game)) {

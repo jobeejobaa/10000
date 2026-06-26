@@ -174,6 +174,23 @@ export function useRoom(initialCode = null) {
     await update(ref(db, `rooms/${roomCode}`), updates);
   }, [roomCode, roomData, uid]);
 
+  /**
+   * Reconnecte un joueur à une salle existante (même si la partie est déjà lancée).
+   * Ne modifie rien dans Firebase — juste active le listener.
+   * Retourne true si l'UID est bien dans la salle, false sinon.
+   */
+  const rejoinRoom = useCallback(async (code) => {
+    if (!uid) return false;
+    const upper = code.toUpperCase().trim();
+    const snap = await get(ref(db, `rooms/${upper}`));
+    if (!snap.exists()) return false;
+    const data = snap.val();
+    const order = data.playerOrder ?? [];
+    if (!order.includes(uid)) return false;
+    setRoomCode(upper);
+    return true;
+  }, [uid]);
+
   /** Mode 'game' — synchronise l'état du tour courant pour les spectateurs. */
   const syncTurnView = useCallback(async (data) => {
     if (!roomCode) return;
@@ -186,5 +203,5 @@ export function useRoom(initialCode = null) {
     setRoomData(null);
   }, []);
 
-  return { uid, roomCode, roomData, error, createRoom, joinRoom, startGame, submitGameTurn, submitTurn, syncTurnView, leaveRoom };
+  return { uid, roomCode, roomData, error, createRoom, joinRoom, rejoinRoom, startGame, submitGameTurn, submitTurn, syncTurnView, leaveRoom };
 }
