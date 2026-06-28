@@ -5,6 +5,9 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 // assez bas pour être déclenché par un vrai geste de "secouer".
 const SHAKE_THRESHOLD = 15;
 
+// Clé localStorage pour mémoriser que l'utilisateur a déjà accordé la permission
+const PERMISSION_KEY = 'shake_permission_granted';
+
 // Délai minimum entre deux secousses détectées, pour éviter les déclenchements
 // multiples sur un seul geste.
 const SHAKE_COOLDOWN_MS = 1000;
@@ -31,7 +34,14 @@ function needsExplicitPermission() {
  * }}
  */
 export function useShakeDetection(onShake) {
-  const [permissionState, setPermissionState] = useState('unknown');
+  // Si l'utilisateur a déjà accordé la permission dans une session précédente,
+  // on part directement en 'granted' pour éviter de réafficher le banner.
+  const [permissionState, setPermissionState] = useState(() => {
+    if (typeof localStorage !== 'undefined' && localStorage.getItem(PERMISSION_KEY) === 'true') {
+      return 'granted';
+    }
+    return 'unknown';
+  });
   const lastShakeTimeRef = useRef(0);
   const lastAccelerationRef = useRef({ x: 0, y: 0, z: 0 });
   const onShakeRef = useRef(onShake);
@@ -77,7 +87,12 @@ export function useShakeDetection(onShake) {
     }
     try {
       const result = await DeviceMotionEvent.requestPermission();
-      setPermissionState(result === 'granted' ? 'granted' : 'denied');
+      if (result === 'granted') {
+        localStorage.setItem(PERMISSION_KEY, 'true');
+        setPermissionState('granted');
+      } else {
+        setPermissionState('denied');
+      }
     } catch {
       setPermissionState('denied');
     }
