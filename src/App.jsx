@@ -1,4 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import { SetupScreen } from './components/SetupScreen.jsx';
 import { GameScreen } from './components/GameScreen.jsx';
 import { WinnerScreen } from './components/WinnerScreen.jsx';
@@ -99,14 +101,14 @@ export default function App() {
     }
   }, []);
 
-  if (showHistory) {
-    return <GameHistory onClose={() => setShowHistory(false)} />;
-  }
+  // ── Écran actif ──────────────────────────────────────────────────────────────
+  let screen;
 
-  // Lien direct ?room=XXXX → aller directement à la salle sans passer par SetupScreen
-  if (urlRoom && !multiplayerSession) {
+  if (showHistory) {
+    screen = <GameHistory onClose={() => setShowHistory(false)} />;
+  } else if (urlRoom && !multiplayerSession) {
     const gameMode = urlRoom.mode;
-    return (
+    screen = (
       <RoomScreen
         gameMode={gameMode}
         prefillCode={urlRoom.code}
@@ -115,12 +117,9 @@ export default function App() {
         onQuit={handleQuit}
       />
     );
-  }
-
-  // Écran de salle — on passe le mode (game ou sheet) à RoomScreen
-  if (multiplayerSession === 'online_game' || multiplayerSession === 'online_sheet') {
+  } else if (multiplayerSession === 'online_game' || multiplayerSession === 'online_sheet') {
     const gameMode = multiplayerSession === 'online_game' ? 'game' : 'sheet';
-    return (
+    screen = (
       <RoomScreen
         gameMode={gameMode}
         autoRejoin={autoRejoin}
@@ -128,21 +127,15 @@ export default function App() {
         onQuit={handleQuit}
       />
     );
-  }
-
-  // Partie multijoueur en cours
-  if (multiplayerSession && typeof multiplayerSession === 'object') {
-    if (multiplayerSession.mode === 'game') {
-      return (
-        <MultiplayerGameScreen
-          roomCode={multiplayerSession.roomCode}
-          uid={multiplayerSession.uid}
-          initialRoomData={multiplayerSession.roomData}
-          onQuit={handleQuit}
-        />
-      );
-    }
-    return (
+  } else if (multiplayerSession && typeof multiplayerSession === 'object') {
+    screen = multiplayerSession.mode === 'game' ? (
+      <MultiplayerGameScreen
+        roomCode={multiplayerSession.roomCode}
+        uid={multiplayerSession.uid}
+        initialRoomData={multiplayerSession.roomData}
+        onQuit={handleQuit}
+      />
+    ) : (
       <MultiplayerScoreSheet
         roomCode={multiplayerSession.roomCode}
         uid={multiplayerSession.uid}
@@ -150,14 +143,10 @@ export default function App() {
         onQuit={handleQuit}
       />
     );
-  }
-
-  if (sheetPlayers) {
-    return <ScoreSheet playerNames={sheetPlayers} onQuit={handleQuit} onGameEnd={handleSheetGameEnd} />;
-  }
-
-  if (!game) {
-    return (
+  } else if (sheetPlayers) {
+    screen = <ScoreSheet playerNames={sheetPlayers} onQuit={handleQuit} onGameEnd={handleSheetGameEnd} />;
+  } else if (!game) {
+    screen = (
       <SetupScreen
         onStart={handleStart}
         onShowHistory={() => setShowHistory(true)}
@@ -165,11 +154,24 @@ export default function App() {
         onResume={handleResume}
       />
     );
+  } else if (isGameOver(game)) {
+    screen = <WinnerScreen winner={game.players[game.winnerIndex]} onPlayAgain={handleQuit} />;
+  } else {
+    screen = <GameScreen game={game} onTurnEnd={handleTurnEnd} onQuit={handleQuit} />;
   }
 
-  if (isGameOver(game)) {
-    return <WinnerScreen winner={game.players[game.winnerIndex]} onPlayAgain={handleQuit} />;
-  }
-
-  return <GameScreen game={game} onTurnEnd={handleTurnEnd} onQuit={handleQuit} />;
+  return (
+    <>
+      <ToastContainer
+        position="top-center"
+        theme="dark"
+        autoClose={5000}
+        hideProgressBar={false}
+        closeOnClick={false}
+        pauseOnHover
+        draggable
+      />
+      {screen}
+    </>
+  );
 }

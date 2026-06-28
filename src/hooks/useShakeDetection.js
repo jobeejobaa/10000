@@ -40,6 +40,10 @@ export function useShakeDetection(onShake) {
     if (typeof localStorage !== 'undefined' && localStorage.getItem(PERMISSION_KEY) === 'true') {
       return 'granted';
     }
+    // Sur desktop et Android, pas besoin de permission explicite
+    if (!needsExplicitPermission()) {
+      return 'not-required';
+    }
     return 'unknown';
   });
   const lastShakeTimeRef = useRef(0);

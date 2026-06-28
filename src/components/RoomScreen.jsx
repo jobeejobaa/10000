@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { toast } from 'react-toastify';
 import { useRoom } from '../hooks/useRoom.js';
 import './RoomScreen.css';
 
@@ -20,6 +21,10 @@ export function RoomScreen({
   const startedRef = useRef(false);
 
   const { uid, roomCode, roomData, error, createRoom, joinRoom, rejoinRoom, startGame, leaveRoom } = useRoom();
+
+  useEffect(() => {
+    if (error) toast.error(error, { toastId: 'room-error' });
+  }, [error]);
 
   const isHost = roomData?.host === uid;
   const players = roomData
@@ -223,8 +228,6 @@ export function RoomScreen({
               />
             </>
           )}
-
-          {error && <p className="room-screen__error">{error}</p>}
 
           <button
             type="button"

@@ -1,8 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { toast } from 'react-toastify';
 import { GameBoard } from './GameBoard.jsx';
 import { Scoreboard } from './Scoreboard.jsx';
-import { Die } from './Die.jsx';
-import { ShakePermissionBanner } from './ShakePermissionBanner.jsx';
 import { useTurn } from '../hooks/useTurn.js';
 import { useShakeDetection } from '../hooks/useShakeDetection.js';
 import { getCurrentPlayer, MINIMUM_SCORE_TO_OPEN } from '../game/gameState.js';
@@ -23,7 +22,8 @@ export function GameScreen({ game, onTurnEnd, onQuit, onTurnProgress }) {
   const [isRolling, setIsRolling] = useState(false);
   // true = tous les dés affichés sur le plateau (phase intermédiaire avant l'envol)
   const [showAllOnBoard, setShowAllOnBoard] = useState(false);
-
+  // IDs des toasts "mis de côté" accumulés dans le tour (pour dismiss au changement de tour)
+  const asideToastIdsRef = useRef([]);
   const currentPlayer = getCurrentPlayer(game);
   const isBot = currentPlayer.isBot;
 
@@ -35,6 +35,7 @@ export function GameScreen({ game, onTurnEnd, onQuit, onTurnProgress }) {
   const scoringDice = turn.selectedIndices.map((i) => turn.dice[i]);
   const nonScoringDice = turn.dice.filter((_, i) => !turn.selectedIndices.includes(i));
   const selectionScore = turn.phase === 'rolled' ? scoreSelection(scoringDice).points : 0;
+
   const totalIfBank = turn.turnScore + selectionScore;
   const remainingDiceCount = nonScoringDice.length === 0 ? 5 : nonScoringDice.length;
   const isHotDice = turn.phase === 'rolled' && nonScoringDice.length === 0;
@@ -65,14 +66,24 @@ export function GameScreen({ game, onTurnEnd, onQuit, onTurnProgress }) {
    * Met de côté les dés scorants ET relance les restants (ou 5 si hot dice).
    * Même séquence d'animation que doRoll.
    */
-  const doRollWithSelection = useCallback(() => {
+  // Pas de useCallback — fonction normale pour toujours lire les valeurs du rendu courant
+  function doRollWithSelection() {
     if (turn.phase !== 'rolled' || showAllOnBoard) return;
+    const diceSidelined = turn.selectedIndices.map(i => turn.dice[i]);
+    const scoreSidelined = scoreSelection(diceSidelined).points;
+    if (diceSidelined.length > 0 && !isBot) {
+      const id = toast.info(
+        <span>Mis de côté 🎲 {diceSidelined.join(' · ')} &nbsp;<strong>+{scoreSidelined} pts</strong></span>,
+        { autoClose: 5000 }
+      );
+      if (id) asideToastIdsRef.current.push(id);
+    }
     setShowAllOnBoard(true);
     setIsRolling(true);
     rollWithSelection();
     setTimeout(() => setIsRolling(false), ROLLING_DURATION);
     setTimeout(() => setShowAllOnBoard(false), TOTAL_SHOW);
-  }, [turn.phase, showAllOnBoard, rollWithSelection]);
+  }
 
   // Secouement : fonctionne pour le premier lancer ET les relances
   const handleShake = useCallback(() => {
@@ -146,6 +157,102 @@ export function GameScreen({ game, onTurnEnd, onQuit, onTurnProgress }) {
     }
   }, [turn.phase, isBot, showAllOnBoard, wouldBust]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ── Toasts ───────────────────────────────────────────────────────────────────
+
+
+  // Dismiss tous les toasts de jeu à chaque nouveau tour
+  useEffect(() => {
+    asideToastIdsRef.current.forEach(id => toast.dismiss(id));
+    asideToastIdsRef.current = [];
+    toast.dismiss('hot-dice');
+    toast.dismiss('bust');
+    toast.dismiss('farkle');
+    toast.dismiss('winning-bank');
+  }, [game.turnCount]);
+
+
+
+  // Hot dice
+  useEffect(() => {
+    if (isBot || showAllOnBoard || isWinningBank) return;
+    if (isHotDice) {
+      toast('🔥 Hot dice ! Tous tes dés ont scoré — relance les 5 !', {
+        toastId: 'hot-dice',
+        autoClose: 5000,
+      });
+    }
+  }, [isHotDice, showAllOnBoard, isWinningBank, isBot]);
+
+  // Bust
+  useEffect(() => {
+    if (isBot || showAllOnBoard) return;
+    if (wouldBust && turn.phase === 'rolled') {
+      toast.error('💥 Tu dépasses 10 000 — ton tour est annulé !', {
+        toastId: 'bust',
+        autoClose: 5000,
+      });
+    }
+  }, [wouldBust, turn.phase, showAllOnBoard, isBot]);
+
+  // Victoire exacte
+  useEffect(() => {
+    if (isBot || showAllOnBoard) return;
+    if (isWinningBank) {
+      toast.success('🎉 10 000 points pile — tu gagnes !', {
+        toastId: 'winning-bank',
+        autoClose: false,
+      });
+    }
+  }, [isWinningBank, showAllOnBoard, isBot]);
+
+  // Farkle
+  useEffect(() => {
+    if (isBot) return;
+    if (turn.phase === 'farkled') {
+      toast.error('Farkle ! Aucune combinaison possible, les points du tour sont perdus.', {
+        toastId: 'farkle',
+        autoClose: 5000,
+      });
+    }
+  }, [turn.phase, isBot]);
+
+  // Shake permission (toast avec bouton "Activer")
+  useEffect(() => {
+    if (isBot) return;
+    if (needsPermissionPrompt) {
+      toast.info(
+        ({ closeToast }) => (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <span>Active la détection de mouvement pour secouer et lancer les dés</span>
+            <button
+              type="button"
+              onClick={() => { requestPermission(); closeToast(); }}
+              style={{
+                alignSelf: 'flex-start',
+                padding: '4px 14px',
+                borderRadius: '6px',
+                border: 'none',
+                background: '#fff',
+                color: '#111',
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
+            >
+              Activer
+            </button>
+          </div>
+        ),
+        {
+          toastId: 'shake-permission',
+          autoClose: false,
+          closeOnClick: false,
+        }
+      );
+    } else {
+      toast.dismiss('shake-permission');
+    }
+  }, [needsPermissionPrompt, isBot, requestPermission]);
+
   // ── Dés affichés sur le plateau ──────────────────────────────────────────────
   // showAllOnBoard=true → tous les dés (scorants=or, autres=estompés)
   // showAllOnBoard=false en phase rolled → seulement les dés restants
@@ -165,8 +272,6 @@ export function GameScreen({ game, onTurnEnd, onQuit, onTurnProgress }) {
 
       <div className="game-screen__content">
 
-        {needsPermissionPrompt && !isBot && <ShakePermissionBanner onRequestPermission={requestPermission} />}
-
         <Scoreboard
           players={game.players}
           currentPlayerIndex={game.currentPlayerIndex}
@@ -176,25 +281,6 @@ export function GameScreen({ game, onTurnEnd, onQuit, onTurnProgress }) {
         <p className="game-screen__turn-label">
           {isBot ? `🤖 ${currentPlayer.name} réfléchit…` : `Au tour de ${currentPlayer.name}`}
         </p>
-
-        {/* ── Zone "mis de côté" — apparaît après l'animation ── */}
-        {turn.phase === 'rolled' && !showAllOnBoard && scoringDice.length > 0 && (
-          <div className="game-screen__aside-zone">
-            <span className="game-screen__aside-label">Mis de côté</span>
-            <div className="game-screen__aside-dice">
-              {scoringDice.map((value, i) => (
-                <Die
-                  key={i}
-                  value={value}
-                  selected={true}
-                  disabled={true}
-                  onToggle={() => {}}
-                />
-              ))}
-            </div>
-            <span className="game-screen__aside-score">+{selectionScore} pts</span>
-          </div>
-        )}
 
         {/* ── Plateau ── */}
         <GameBoard
@@ -214,34 +300,10 @@ export function GameScreen({ game, onTurnEnd, onQuit, onTurnProgress }) {
           </span>
         </div>
 
-        {/* ── Messages ── */}
+        {/* ── Message minimum score ── */}
         {!isBot && turn.phase === 'ready' && turn.turnScore === 0 && !currentPlayer.hasOpenedScore && (
           <p className="game-screen__message">
             Il te faut {MINIMUM_SCORE_TO_OPEN} pts minimum pour entrer dans la partie.
-          </p>
-        )}
-
-        {!showAllOnBoard && isWinningBank && (
-          <p className="game-screen__message game-screen__message--gold">
-            🎉 10 000 points pile — tu gagnes !
-          </p>
-        )}
-
-        {!isBot && isHotDice && !showAllOnBoard && !isWinningBank && (
-          <p className="game-screen__message game-screen__message--gold">
-            🔥 Hot dice ! Tous tes dés ont scoré — relance les 5 !
-          </p>
-        )}
-
-        {!isHotDice && wouldBust && turn.phase === 'rolled' && !showAllOnBoard && (
-          <p className="game-screen__message game-screen__message--danger">
-            💥 Tu dépasses 10 000 — ton tour est annulé !
-          </p>
-        )}
-
-        {turn.phase === 'farkled' && (
-          <p className="game-screen__message game-screen__message--danger">
-            Farkle ! Aucune combinaison possible, les points du tour sont perdus.
           </p>
         )}
 
