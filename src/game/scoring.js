@@ -121,3 +121,17 @@ export function hasScoringOption(dice) {
 export function rollDice(count) {
   return Array.from({ length: count }, () => Math.floor(Math.random() * 6) + 1);
 }
+
+/**
+ * Détermine si un joueur a ouvert son score (a validé au moins un tour ≥ 500 sans bust).
+ * Fonction partagée entre le mode local (ScoreSheet) et le mode Firebase (useRoom),
+ * pour garantir un comportement identique dans les deux modes.
+ *
+ * @param {Array<{ points: number|null, isBust: boolean }>} entries - historique des tours du joueur
+ * @returns {boolean}
+ */
+export function hasPlayerOpened(entries) {
+  return entries.some(
+    (e) => e.points !== null && e.points >= MINIMUM_SCORE_TO_OPEN && !e.isBust
+  );
+}

@@ -21,7 +21,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { ref, set, get, onValue, update, serverTimestamp } from 'firebase/database';
 import { db, signInAnon } from '../firebase.js';
 import { createGame, applyTurnResult, isGameOver } from '../game/gameState.js';
-import { TARGET_SCORE, MINIMUM_SCORE_TO_OPEN, TRIPLE_FARKLE_PENALTY } from '../game/scoring.js';
+import { TARGET_SCORE, MINIMUM_SCORE_TO_OPEN, TRIPLE_FARKLE_PENALTY, hasPlayerOpened } from '../game/scoring.js';
 
 function generateCode() {
   const letters = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
@@ -170,7 +170,7 @@ export function useRoom(initialCode = null) {
     const isFarkle = points === null;
     const prevEntries = gs.entries?.[uid] ?? [];
     const prevTotal = prevEntries.length > 0 ? prevEntries[prevEntries.length - 1].total : 0;
-    const playerHasOpened = prevEntries.some((e) => e.points !== null && e.points >= MINIMUM_SCORE_TO_OPEN && !e.isBust);
+    const playerHasOpened = hasPlayerOpened(prevEntries);
     // Les farkles ne comptent qu'une fois entré en jeu
     const prevFarkles = gs.consecutiveFarkles?.[uid] ?? 0;
     const newFarkleCount = isFarkle && playerHasOpened ? prevFarkles + 1 : isFarkle ? prevFarkles : 0;
@@ -191,7 +191,7 @@ export function useRoom(initialCode = null) {
     };
 
     const allEntries = [...prevEntries, newEntry];
-    const hasOpened = allEntries.some((e) => e.points !== null && e.points >= MINIMUM_SCORE_TO_OPEN && !e.isBust);
+    const hasOpened = hasPlayerOpened(allEntries);
     const isWinner = hasOpened && newTotal === TARGET_SCORE;
     const nextTurnIndex = (currentIndex + 1) % order.length;
 

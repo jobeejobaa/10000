@@ -111,6 +111,8 @@ export function GameScreen({ game, onTurnEnd, onQuit, onTurnProgress }) {
     } else if (turn.phase === 'farkled') {
       onTurnProgress({ phase: 'farkled', dice: turn.dice, selectedIndices: [] });
     }
+  // onTurnProgress et les valeurs dérivées (selectionScore, totalIfBank…) changent à chaque
+  // rendu — les inclure créerait des boucles infinies. On réagit uniquement aux phases clés.
   }, [turn.phase, showAllOnBoard]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Fin de tour automatique ──────────────────────────────────────────────────
@@ -129,6 +131,8 @@ export function GameScreen({ game, onTurnEnd, onQuit, onTurnProgress }) {
     if (turn.phase !== 'rolled' || showAllOnBoard || !isWinningBank) return;
     const timeout = setTimeout(() => onTurnEnd(totalIfBank, false), 1200);
     return () => clearTimeout(timeout);
+  // totalIfBank est recalculé à chaque rendu — l'inclure déclencherait l'effet en boucle.
+  // On réagit sur isWinningBank (dérivé stable) et on lit totalIfBank via la closure du rendu courant.
   }, [turn.phase, showAllOnBoard, isWinningBank]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Bust : fin de tour auto quand on dépasse 10 000 (pas un farkle) ─────────
@@ -136,6 +140,8 @@ export function GameScreen({ game, onTurnEnd, onQuit, onTurnProgress }) {
     if (turn.phase !== 'rolled' || showAllOnBoard || !wouldBust) return;
     const timeout = setTimeout(() => onTurnEnd(totalIfBank, false), 1500);
     return () => clearTimeout(timeout);
+  // Même raison que ci-dessus : totalIfBank et onTurnEnd sont stables dans la pratique
+  // mais formellement recréés — les exclure évite des re-souscriptions inutiles.
   }, [turn.phase, showAllOnBoard, wouldBust]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Tour du bot ──────────────────────────────────────────────────────────────
@@ -155,10 +161,11 @@ export function GameScreen({ game, onTurnEnd, onQuit, onTurnProgress }) {
       }, BOT_DECIDE_DELAY);
       return () => clearTimeout(timer);
     }
+  // doRoll/doRollWithSelection sont recréés à chaque rendu (fonctions non-mémoïsées) ;
+  // les inclure causerait une boucle. On se synchronise sur les états qui changent réellement.
   }, [turn.phase, isBot, showAllOnBoard, wouldBust]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Toasts ───────────────────────────────────────────────────────────────────
-
 
   // Dismiss tous les toasts de jeu à chaque nouveau tour
   useEffect(() => {

@@ -80,12 +80,23 @@ export function applyTurnResult(game, turnScore, farkled) {
   };
 }
 
+/**
+ * Retourne l'objet joueur dont c'est le tour.
+ * @param {object} game
+ * @returns {{ name: string, isBot: boolean, score: number, hasOpenedScore: boolean }}
+ */
 export function getCurrentPlayer(game) {
   return game.players[game.currentPlayerIndex];
 }
 
+/**
+ * Indique si la partie est terminée (un vainqueur a été désigné).
+ * On utilise != null (et non !==) car Firebase peut renvoyer undefined
+ * à la place de null quand le champ est absent de la base.
+ * @param {object} game
+ * @returns {boolean}
+ */
 export function isGameOver(game) {
-  // Firebase supprime les null → winnerIndex peut revenir undefined ; on couvre les deux
   return game.winnerIndex != null;
 }
 

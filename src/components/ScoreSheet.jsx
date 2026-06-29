@@ -1,7 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
-import { TARGET_SCORE, MINIMUM_SCORE_TO_OPEN, TRIPLE_FARKLE_PENALTY } from '../game/scoring.js';
+import { TARGET_SCORE, MINIMUM_SCORE_TO_OPEN, TRIPLE_FARKLE_PENALTY, hasPlayerOpened } from '../game/scoring.js';
 import './ScoreSheet.css';
 
+/**
+ * ScoreSheet — feuille de score locale (mode sans dés virtuels).
+ * Le joueur courant entre ses points manuellement après avoir joué aux dés physiques.
+ * La logique de score (bust, farkle, triple farkle) est identique au mode multijoueur Firebase.
+ */
 export function ScoreSheet({ playerNames, onQuit, onGameEnd }) {
   const [entries, setEntries] = useState(() => playerNames.map(() => []));
   const [consecutiveFarkles, setConsecutiveFarkles] = useState(() => playerNames.map(() => 0));
@@ -25,7 +30,7 @@ export function ScoreSheet({ playerNames, onQuit, onGameEnd }) {
   }
 
   function hasOpened(playerIndex) {
-    return entries[playerIndex].some((e) => e.points !== null && e.points >= MINIMUM_SCORE_TO_OPEN);
+    return hasPlayerOpened(entries[playerIndex]);
   }
 
   function addEntry(points) {
@@ -45,7 +50,7 @@ export function ScoreSheet({ playerNames, onQuit, onGameEnd }) {
     if (isBust) newTotal = currentTotal;
 
     const newEntry = {
-      points: isBust ? points : points,  // garde les pts pour l'affichage
+      points,  // garde les pts pour l'affichage (affiché ⚡+X en cas de bust)
       total: newTotal,
       penalty: isTripleFarkle,
       farkleStreak: isFarkle ? newFarkleCount : 0,
@@ -55,7 +60,7 @@ export function ScoreSheet({ playerNames, onQuit, onGameEnd }) {
     const newEntries = entries.map((e) => [...e]);
     newEntries[currentPlayerIndex] = [...newEntries[currentPlayerIndex], newEntry];
 
-    const opened = newEntries[currentPlayerIndex].some((e) => e.points !== null && e.points >= MINIMUM_SCORE_TO_OPEN && !e.isBust);
+    const opened = hasPlayerOpened(newEntries[currentPlayerIndex]);
     const hasWon = opened && newTotal === TARGET_SCORE && winner === null;
 
     setEntries(newEntries);
