@@ -20,6 +20,9 @@ function createInitialTurnState() {
     turnScore: 0,          // points accumulés des lancers précédents CE tour
     diceAvailableForRoll: INITIAL_DICE_COUNT,
     lastRollBreakdown: [],
+    lastSidedDice: [],     // dés mis de côté au dernier lancer (pour le toast)
+    lastSidedScore: 0,
+    sidedRollCount: 0,     // entier incrémenté à chaque rollWithSelection (primitif fiable)
   };
 }
 
@@ -64,6 +67,9 @@ export function useTurn() {
           turnScore: newTurnScore,
           diceAvailableForRoll: diceToRoll,
           lastRollBreakdown: breakdown,
+          lastSidedDice: selectedValues,
+          lastSidedScore: points,
+          sidedRollCount: prev.sidedRollCount + 1,
         };
       }
 
@@ -76,6 +82,9 @@ export function useTurn() {
         turnScore: newTurnScore,
         diceAvailableForRoll: diceToRoll,
         lastRollBreakdown: breakdown,
+        lastSidedDice: selectedValues,
+        lastSidedScore: points,
+        sidedRollCount: prev.sidedRollCount + 1,
       };
     });
   }, []);

@@ -58,6 +58,18 @@ button:disabled {
   opacity: 0.45;
 }
 
+/* ── Toasts personnalisés ────────────────────────────────────────────────── */
+.Toastify__toast {
+  background: rgba(212, 175, 55, 0.15) !important;
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  color: var(--color-cream) !important;
+}
+
+.Toastify__progress-bar {
+  background: var(--color-success) !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     animation-duration: 0.01ms !important;
