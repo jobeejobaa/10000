@@ -40,7 +40,7 @@ export function GameScreen({ game, onTurnEnd, onQuit, onTurnProgress }) {
   const remainingDiceCount = nonScoringDice.length === 0 ? 5 : nonScoringDice.length;
   const isHotDice = turn.phase === 'rolled' && nonScoringDice.length === 0;
   const wouldBust = currentPlayer.hasOpenedScore && (currentPlayer.score + totalIfBank) > 10000;
-  const isWinningBank = currentPlayer.hasOpenedScore && totalIfBank === 10000;
+  const isWinningBank = currentPlayer.hasOpenedScore && (currentPlayer.score + totalIfBank) === 10000;
   const canBank = turn.phase === 'rolled' && !showAllOnBoard
     && totalIfBank > 0 && (!isHotDice || isWinningBank)
     && (currentPlayer.hasOpenedScore || totalIfBank >= MINIMUM_SCORE_TO_OPEN)
@@ -69,15 +69,6 @@ export function GameScreen({ game, onTurnEnd, onQuit, onTurnProgress }) {
   // Pas de useCallback — fonction normale pour toujours lire les valeurs du rendu courant
   function doRollWithSelection() {
     if (turn.phase !== 'rolled' || showAllOnBoard) return;
-    const diceSidelined = turn.selectedIndices.map(i => turn.dice[i]);
-    const scoreSidelined = scoreSelection(diceSidelined).points;
-    if (diceSidelined.length > 0 && !isBot) {
-      const id = toast.info(
-        <span>Mis de côté 🎲 {diceSidelined.join(' · ')} &nbsp;<strong>+{scoreSidelined} pts</strong></span>,
-        { autoClose: 5000 }
-      );
-      if (id) asideToastIdsRef.current.push(id);
-    }
     setShowAllOnBoard(true);
     setIsRolling(true);
     rollWithSelection();
@@ -166,6 +157,16 @@ export function GameScreen({ game, onTurnEnd, onQuit, onTurnProgress }) {
   }, [turn.phase, isBot, showAllOnBoard, wouldBust]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Toasts ───────────────────────────────────────────────────────────────────
+
+  // Toast "mis de côté" — déclenché dès que sidedRollCount change
+  useEffect(() => {
+    if (isBot || turn.sidedRollCount === 0 || !turn.lastSidedDice?.length) return;
+    const id = toast.info(
+      <span>Mis de côté 🎲 {turn.lastSidedDice.join(' · ')} &nbsp;<strong>+{turn.lastSidedScore} pts</strong></span>,
+      { toastId: `aside-${turn.sidedRollCount}`, autoClose: 5000 }
+    );
+    if (id) asideToastIdsRef.current.push(id);
+  }, [turn.sidedRollCount]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Dismiss tous les toasts de jeu à chaque nouveau tour
   useEffect(() => {
