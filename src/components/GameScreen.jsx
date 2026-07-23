@@ -14,7 +14,7 @@ const BOT_DECIDE_DELAY = 800;
 
 // Durées de l'animation en ms
 const ROLLING_DURATION = 500;    // animation des dés qui roulent
-const PAUSE_ON_BOARD = 500;      // pause où les dés scorants sont visibles en or
+const PAUSE_ON_BOARD = 1400;      // pause où les dés scorants sont visibles en or
 const TOTAL_SHOW = ROLLING_DURATION + PAUSE_ON_BOARD; // 1000ms avant envol
 
 export function GameScreen({ game, onTurnEnd, onQuit, onTurnProgress }) {
@@ -109,7 +109,7 @@ export function GameScreen({ game, onTurnEnd, onQuit, onTurnProgress }) {
   // ── Fin de tour automatique ──────────────────────────────────────────────────
   useEffect(() => {
     if (turn.phase === 'farkled') {
-      const timeout = setTimeout(() => onTurnEnd(0, true), 1400);
+      const timeout = setTimeout(() => onTurnEnd(0, true), 1600);
       return () => clearTimeout(timeout);
     }
     if (turn.phase === 'banked') {
@@ -120,7 +120,7 @@ export function GameScreen({ game, onTurnEnd, onQuit, onTurnProgress }) {
   // ── Victoire exacte à 10 000 : bank automatique ──────────────────────────────
   useEffect(() => {
     if (turn.phase !== 'rolled' || showAllOnBoard || !isWinningBank) return;
-    const timeout = setTimeout(() => onTurnEnd(totalIfBank, false), 1200);
+    const timeout = setTimeout(() => onTurnEnd(totalIfBank, false), 1800);
     return () => clearTimeout(timeout);
   // totalIfBank est recalculé à chaque rendu — l'inclure déclencherait l'effet en boucle.
   // On réagit sur isWinningBank (dérivé stable) et on lit totalIfBank via la closure du rendu courant.
@@ -129,7 +129,7 @@ export function GameScreen({ game, onTurnEnd, onQuit, onTurnProgress }) {
   // ── Bust : fin de tour auto quand on dépasse 10 000 (pas un farkle) ─────────
   useEffect(() => {
     if (turn.phase !== 'rolled' || showAllOnBoard || !wouldBust) return;
-    const timeout = setTimeout(() => onTurnEnd(totalIfBank, false), 1500);
+    const timeout = setTimeout(() => onTurnEnd(totalIfBank, false), 2000);
     return () => clearTimeout(timeout);
   // Même raison que ci-dessus : totalIfBank et onTurnEnd sont stables dans la pratique
   // mais formellement recréés — les exclure évite des re-souscriptions inutiles.
