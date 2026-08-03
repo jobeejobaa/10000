@@ -107,13 +107,16 @@
 
 .score-sheet__turn--farkle {
   color: var(--color-danger);
-  font-weight: 600;
+  font-weight: 800;
+  font-size: 15px;
+  text-shadow: 0 0 8px rgba(255, 59, 48, 0.5);
 }
 
 .score-sheet__turn--penalty {
   color: var(--color-danger);
-  font-weight: 700;
-  font-size: 10px;
+  font-weight: 800;
+  font-size: 12px;
+  text-shadow: 0 0 8px rgba(255, 59, 48, 0.5);
 }
 
 .score-sheet__turn--bust {
