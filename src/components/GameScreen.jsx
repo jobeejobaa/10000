@@ -24,10 +24,21 @@ export function GameScreen({ game, onTurnEnd, onQuit, onTurnProgress }) {
   const [showAllOnBoard, setShowAllOnBoard] = useState(false);
   // IDs des toasts "mis de côté" accumulés dans le tour (pour dismiss au changement de tour)
   const asideToastIdsRef = useRef([]);
+  // IDs des setTimeout d'animation en cours (pour les annuler si le tour change avant la fin)
+  const rollTimeoutsRef = useRef([]);
   const currentPlayer = getCurrentPlayer(game);
   const isBot = currentPlayer.isBot;
 
+  // Change de tour : reset complet, y compris l'état d'animation local.
+  // Un tour peut se terminer automatiquement (farkle, victoire pile) avant que
+  // l'animation de lancer précédente n'ait fini son propre minuteur — sans ce
+  // nettoyage, showAllOnBoard/isRolling pouvaient rester bloqués à true et
+  // empêcher le joueur suivant de taper le plateau.
   useEffect(() => {
+    rollTimeoutsRef.current.forEach(clearTimeout);
+    rollTimeoutsRef.current = [];
+    setIsRolling(false);
+    setShowAllOnBoard(false);
     resetTurn();
   }, [game.turnCount, resetTurn]);
 
@@ -58,8 +69,10 @@ export function GameScreen({ game, onTurnEnd, onQuit, onTurnProgress }) {
     setShowAllOnBoard(true);
     setIsRolling(true);
     roll();
-    setTimeout(() => setIsRolling(false), ROLLING_DURATION);
-    setTimeout(() => setShowAllOnBoard(false), TOTAL_SHOW);
+    rollTimeoutsRef.current.push(
+      setTimeout(() => setIsRolling(false), ROLLING_DURATION),
+      setTimeout(() => setShowAllOnBoard(false), TOTAL_SHOW),
+    );
   }, [turn.phase, showAllOnBoard, roll]);
 
   /**
@@ -72,8 +85,10 @@ export function GameScreen({ game, onTurnEnd, onQuit, onTurnProgress }) {
     setShowAllOnBoard(true);
     setIsRolling(true);
     rollWithSelection();
-    setTimeout(() => setIsRolling(false), ROLLING_DURATION);
-    setTimeout(() => setShowAllOnBoard(false), TOTAL_SHOW);
+    rollTimeoutsRef.current.push(
+      setTimeout(() => setIsRolling(false), ROLLING_DURATION),
+      setTimeout(() => setShowAllOnBoard(false), TOTAL_SHOW),
+    );
   }
 
   // Tap sur le plateau : lance les dés (phase 'ready') ou relance les dés restants
