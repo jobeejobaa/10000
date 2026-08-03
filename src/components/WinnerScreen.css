@@ -42,3 +42,15 @@
 .winner__btn:hover {
   background: var(--color-die-red-dark);
 }
+
+.winner__btn--secondary {
+  margin-top: 12px;
+  background: transparent;
+  border: 1px solid rgba(245, 239, 227, 0.25);
+  color: var(--color-cream-dim);
+}
+
+.winner__btn--secondary:hover {
+  background: rgba(245, 239, 227, 0.08);
+  color: var(--color-cream);
+}
