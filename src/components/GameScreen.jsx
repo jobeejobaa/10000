@@ -76,6 +76,16 @@ export function GameScreen({ game, onTurnEnd, onQuit, onTurnProgress }) {
     setTimeout(() => setShowAllOnBoard(false), TOTAL_SHOW);
   }
 
+  // Tap sur le plateau : lance les dés (phase 'ready') ou relance les dés restants
+  // (phase 'rolled'), sauf si garder les points est désormais la seule option (bust / victoire pile).
+  const canTapBoardToRoll = !isBot && !showAllOnBoard
+    && (turn.phase === 'ready' || (turn.phase === 'rolled' && !isWinningBank && !wouldBust));
+
+  function handleBoardTap() {
+    if (turn.phase === 'ready') doRoll();
+    else if (turn.phase === 'rolled') doRollWithSelection();
+  }
+
   // Secouement : fonctionne pour le premier lancer ET les relances
   const handleShake = useCallback(() => {
     if (turn.phase === 'ready') doRoll();
@@ -310,8 +320,8 @@ export function GameScreen({ game, onTurnEnd, onQuit, onTurnProgress }) {
           onToggleDie={() => {}}
           isRolling={isRolling}
           shakeIsActive={turn.phase === 'ready' && !isBot && shakeIsActive}
-          canRoll={!isBot && turn.phase === 'ready' && !showAllOnBoard}
-          onBoardTap={doRoll}
+          canRoll={canTapBoardToRoll}
+          onBoardTap={handleBoardTap}
         />
 
         {/* ── Score du tour ── */}
@@ -321,6 +331,13 @@ export function GameScreen({ game, onTurnEnd, onQuit, onTurnProgress }) {
             {turn.phase === 'rolled' && !showAllOnBoard ? totalIfBank : turn.turnScore}
           </span>
         </div>
+
+        {/* ── Message relance : tap sur le plateau ── */}
+        {!isBot && canTapBoardToRoll && turn.phase === 'rolled' && !showAllOnBoard && (
+          <p className="game-screen__message">
+            Appuie sur le plateau pour {isHotDice ? 'relancer les 5 dés 🔥' : `relancer ${remainingDiceCount} dé${remainingDiceCount > 1 ? 's' : ''}`}
+          </p>
+        )}
 
         {/* ── Message minimum score ── */}
         {!isBot && turn.phase === 'ready' && turn.turnScore === 0 && !currentPlayer.hasOpenedScore && (
@@ -343,7 +360,7 @@ export function GameScreen({ game, onTurnEnd, onQuit, onTurnProgress }) {
                     Garder {totalIfBank} pts
                   </button>
                 )}
-                {!isWinningBank && (wouldBust ? (
+                {!isWinningBank && wouldBust && (
                   <button
                     type="button"
                     className="game-screen__btn game-screen__btn--secondary"
@@ -351,15 +368,7 @@ export function GameScreen({ game, onTurnEnd, onQuit, onTurnProgress }) {
                   >
                     Fin de tour →
                   </button>
-                ) : (
-                  <button
-                    type="button"
-                    className="game-screen__btn game-screen__btn--primary"
-                    onClick={doRollWithSelection}
-                  >
-                    {isHotDice ? '🔥 Relancer 5 dés' : `Relancer ${remainingDiceCount} dé${remainingDiceCount > 1 ? 's' : ''}`}
-                  </button>
-                ))}
+                )}
               </>
             )}
 
