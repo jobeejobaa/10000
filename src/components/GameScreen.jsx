@@ -217,12 +217,24 @@ export function GameScreen({ game, onTurnEnd, onQuit, onTurnProgress }) {
   useEffect(() => {
     if (isBot) return;
     if (turn.phase === 'farkled') {
-      toast.error('Farkle ! Aucune combinaison possible, les points du tour sont perdus.', {
-        toastId: 'farkle',
-        autoClose: 5000,
-      });
+      // 3e farkle consécutif (une fois le score ouvert) → pénalité -1000
+      const isTriplePenalty = currentPlayer.hasOpenedScore
+        && (game.consecutiveFarkles?.[game.currentPlayerIndex] ?? 0) >= 2;
+
+      if (isTriplePenalty) {
+        toast.error('💥 Triple Farkle ! −1000 points de pénalité', {
+          toastId: 'farkle',
+          autoClose: 9000,
+          className: 'toast-triple-penalty',
+        });
+      } else {
+        toast.error('Farkle ! Aucune combinaison possible, les points du tour sont perdus.', {
+          toastId: 'farkle',
+          autoClose: 5000,
+        });
+      }
     }
-  }, [turn.phase, isBot]);
+  }, [turn.phase, isBot, currentPlayer.hasOpenedScore, game.consecutiveFarkles, game.currentPlayerIndex]);
 
   // Shake permission (toast avec bouton "Activer")
   useEffect(() => {

@@ -70,6 +70,24 @@ button:disabled {
   background: var(--color-success) !important;
 }
 
+/* Toast pénalité triple farkle (-1000) — plus visible, reste plus longtemps */
+.toast-triple-penalty {
+  background: rgba(255, 59, 48, 0.22) !important;
+  border: 2px solid var(--color-danger) !important;
+  box-shadow: 0 0 20px rgba(255, 59, 48, 0.55);
+}
+
+.toast-triple-penalty .Toastify__toast-body {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--color-danger) !important;
+}
+
+.toast-triple-penalty .Toastify__progress-bar {
+  background: var(--color-danger) !important;
+  height: 4px;
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     animation-duration: 0.01ms !important;
