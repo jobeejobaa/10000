@@ -4,6 +4,23 @@
   padding: 1.5rem 0;
 }
 
+.board--tappable {
+  cursor: pointer;
+}
+
+.board--tappable .board__ring {
+  animation: board-pulse 2.2s ease-out infinite;
+}
+
+.board--tappable:active .board__ring {
+  transform: scale(0.97);
+}
+
+@keyframes board-pulse {
+  0%, 100% { box-shadow: 0 0 0 2px var(--color-wood-dark), 0 12px 28px rgba(0, 0, 0, 0.45), 0 0 0 0 rgba(193, 67, 45, 0.35); }
+  50% { box-shadow: 0 0 0 2px var(--color-wood-dark), 0 12px 28px rgba(0, 0, 0, 0.45), 0 0 0 10px rgba(193, 67, 45, 0); }
+}
+
 .board__ring {
   width: min(320px, 86vw);
   height: min(320px, 86vw);
@@ -13,6 +30,7 @@
   box-shadow:
     0 0 0 2px var(--color-wood-dark),
     0 12px 28px rgba(0, 0, 0, 0.45);
+  transition: transform 0.1s ease-out;
 }
 
 .board__felt {

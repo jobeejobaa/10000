@@ -310,6 +310,8 @@ export function GameScreen({ game, onTurnEnd, onQuit, onTurnProgress }) {
           onToggleDie={() => {}}
           isRolling={isRolling}
           shakeIsActive={turn.phase === 'ready' && !isBot && shakeIsActive}
+          canRoll={!isBot && turn.phase === 'ready' && !showAllOnBoard}
+          onBoardTap={doRoll}
         />
 
         {/* ── Score du tour ── */}
@@ -330,16 +332,6 @@ export function GameScreen({ game, onTurnEnd, onQuit, onTurnProgress }) {
         {/* ── Boutons ── */}
         {!isBot && (
           <div className="game-screen__controls">
-            {turn.phase === 'ready' && (
-              <button
-                type="button"
-                className={`game-screen__btn game-screen__btn--primary${!shakeIsActive ? ' game-screen__btn--pulse' : ''}`}
-                onClick={doRoll}
-              >
-                Lancer les dés
-              </button>
-            )}
-
             {turn.phase === 'rolled' && !showAllOnBoard && (
               <>
                 {canBank && (

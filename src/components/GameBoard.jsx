@@ -10,12 +10,19 @@ import './GameBoard.css';
  * @param {boolean} canSelect - si les dés sont cliquables (phase 'rolled')
  * @param {(index: number) => void} onToggleDie
  * @param {boolean} isRolling - true brièvement pendant l'animation de lancer
+ * @param {boolean} canRoll - si taper le plateau doit lancer les dés (phase 'ready')
+ * @param {() => void} onBoardTap - déclenché au tap du plateau quand canRoll est vrai
  */
-export function GameBoard({ dice, selectedIndices, canSelect, onToggleDie, isRolling, shakeIsActive }) {
+export function GameBoard({ dice, selectedIndices, canSelect, onToggleDie, isRolling, shakeIsActive, canRoll, onBoardTap }) {
   const hasDice = dice.length > 0;
 
   return (
-    <div className="board">
+    <div
+      className={`board${canRoll ? ' board--tappable' : ''}`}
+      onClick={canRoll ? onBoardTap : undefined}
+      role={canRoll ? 'button' : undefined}
+      tabIndex={canRoll ? 0 : undefined}
+    >
       <div className="board__ring">
         <div className="board__felt">
           {hasDice ? (
@@ -35,7 +42,7 @@ export function GameBoard({ dice, selectedIndices, canSelect, onToggleDie, isRol
               {shakeIsActive ? (
                 <>Secoue ton téléphone<br />pour lancer les dés</>
               ) : (
-                <>Appuie sur « Lancer les dés »<br />ci-dessous</>
+                <>Appuie sur le plateau<br />pour lancer les dés</>
               )}
             </p>
           )}
